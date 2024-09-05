@@ -67,3 +67,7 @@ Variant levels: Mythic (≤0.1%), Legendary (0.1-1%), Epic (1-5%), Rare (5-10%),
 - Players have a voice in the game's future development and direction
 
 Experience the fusion of blockchain technology and strategic management in KasLand. Optimize your single plot, contribute to community energy production, and earn zkaspa in this exciting, transparent, and community-driven blockchain-based game!
+
+# Documentation
+
+Coming soon...
