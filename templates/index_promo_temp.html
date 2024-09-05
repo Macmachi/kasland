@@ -1,0 +1,591 @@
+<!--
+KasLand Application
+Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
+
+This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 
+International License. To view a copy of this license, visit:
+http://creativecommons.org/licenses/by-nc/4.0/
+
+You are free to:
+- Share: copy and redistribute the material in any medium or format
+- Adapt: remix, transform, and build upon the material
+
+Under the following terms:
+- Attribution: You must give appropriate credit, provide a link to the license,
+  and indicate if changes were made.
+- NonCommercial: You may not use the material for commercial purposes.
+
+For any commercial use or licensing inquiries, please contact: rymentz.studio@gmail.com
+-->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' 'unsafe-inline' https://fonts.gstatic.com; img-src 'self' data: blob: https://pfst.cf2.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com; media-src 'self' data: blob: https://pfst.cf2.poecdn.net https://i.imgur.com https://wikimedia.org; frame-src 'self' https://www.youtube.com; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KasLand - A game on the Kaspa blockchain</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&amp;display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #35a79c;
+            --secondary-color: #7CDBCB;
+            --text-color: #333;
+            --bg-color: #f4f4f4;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        
+        header img {
+            width: 200px;
+            max-width: 100%;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin: 1rem 0;
+        }
+        
+        .language-selector {
+            text-align: right;
+            padding: 1rem 0;
+            margin-right: 20px; 
+        }
+        
+        .language-selector select {
+            padding: 0.5rem;
+            border-radius: 5px;
+            border: none;
+            background-color: white;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 3rem 0;
+        }
+        
+        .feature {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature h2 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-top: 0;
+        }
+        
+        .credits {
+        text-align: center;
+        padding: 1rem;
+        margin-top: 2rem;
+        font-size: 0.9rem;
+        color: #666;
+        }
+
+        .credits a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .credits a:hover {
+            text-decoration: underline;
+        }
+            
+        .cta-button {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            background: var(--secondary-color);
+        }
+
+        #countdown {
+        background: linear-gradient(135deg, #4a0e4e, #81267d);
+        color: #ffffff;
+        padding: 1.5rem;
+        border-radius: 15px;
+        text-align: center;
+        margin: 2rem auto;
+        font-size: 2rem;
+        font-weight: bold;
+        box-shadow: 0 10px 20px rgba(74, 14, 78, 0.3);
+        max-width: 800px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        #countdown-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem; 
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    #countdown-timer {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    /* For temporary message instead of the counter */
+    #temporary-message {
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }     
+
+    @media (max-width: 768px) {
+        header h1 {
+            font-size: 2rem;
+        }
+        
+        .features {
+            grid-template-columns: 1fr;
+        }
+    }
+    .community-message {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        text-align: center;
+        margin: 2rem 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .community-message h2 {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+
+    .community-message p {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .cta-button {
+        display: inline-block;
+        background: white;
+        color: var(--primary-color);
+        padding: 0.8rem 1.5rem;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: 600;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .cta-button:hover {
+        background: var(--bg-color);
+        transform: translateY(-3px);
+    }
+    </style>
+</head>
+<body>
+    <div class="language-selector">
+        <select id="languageSelect" onchange="changeLanguage()">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="zh">中文</option>
+            <option value="it">Italiano</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+            <option value="pt">Português</option>
+            <option value="ru">Русский</option>
+        </select>
+    </div>
+
+    <header>
+        <div class="container">
+            <img src="{{ url_for('static', filename='images/logo_full.webp') }}" alt="KasLand Logo">
+            <h1>Welcome to KasLand</h1>
+            <p>The first game developed on the Kaspa blockchain</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="countdown">
+            <!-- 
+            <div id="countdown-title"></div>
+            <div id="countdown-timer"></div>
+            -->
+             <!-- Temporary message to be commented out when using the counter and uncomment lines above -->
+            <div id="temporary-message">Beta release scheduled for September 2024</div>
+        </div>
+
+        <div class="community-message">
+            <h2>🌟 Community-Driven Game</h2>
+            <p>A game created for the community, managed by the community. We plan to implement a democratic system so that the community can influence the evolution of the game.</p>
+            <a href="https://discord.gg/UuxeTb42P9" class="cta-button">Join our Discord to learn more</a>
+        </div>
+
+        <section class="features">
+            <div class="feature">
+                <h2>🏘️ Buildings and Economy</h2>
+                <p>Buy and upgrade your plot with different types of buildings, from small houses to mansions, including power generation buildings or mining farms. Optimize your zkaspa production.</p>
+            </div>
+
+            <div class="feature">
+                <h2>🎨 Variants with Different Rarity Levels</h2>
+                <p>Each building has multiple variants, from basic to mythical, each with its own rarity.</p>
+            </div>
+
+            <div class="feature">
+                <h2>💰 Real and Virtual Economy</h2>
+                <p>Use real KAS to develop your plot and produce virtual zkaspa. Participate in a dynamic and constantly evolving economy.</p>
+            </div>
+
+            <div class="feature">
+                <h2>🎭 Dynamic Events</h2>
+                <p>Unexpected events will influence your production and strategy, just like in real life.</p>
+            </div>
+
+            <div class="feature">
+                <h2>⚡ Energy Management</h2>
+                <p>KasLand inhabitants will need to balance energy production and consumption to maximize their gains. Invest in sustainable solutions for the future of your city.</p>
+            </div>
+
+            <div class="feature">
+                <h2>🤝 Community Redistribution</h2>
+                <p>A portion of the KAS is redistributed to KasLand inhabitants based on the ZKaspa collected, and another portion is redistributed to official Kaspa community projects, strengthening the overall ecosystem.</p>
+            </div>
+        </section>
+
+        <div class="credits">
+            <p>© 2024 KasLand. All rights reserved</p>
+        </div>
+    </main>
+
+    <script>
+const translations = {
+        en: {
+            title: "KasLand - A Virtual World on the Kaspa Blockchain",
+            welcome: "Welcome to KasLand",
+            firstGame: "The first game developed on the Kaspa blockchain",
+            communityTitle: "🌟 Community-Driven Game",
+            community: "A game created for the community, managed by the community. We plan to implement a democratic system so that the community can influence the evolution of the game.",
+            discord: "Join our Discord to learn more",
+            buildingsEconomy: "🏘️ Buildings and Economy",
+            buildingsDesc: "Buy and upgrade your plot with different types of buildings, from small houses to mansions, including power generation buildings or mining farms. Optimize your zkaspa production.",
+            variants: "🎨 Variants with Different Rarity Levels",
+            variantsDesc: "Each building has multiple variants, from basic to mythical, each with its own rarity.",
+            economy: "💰 Real and Virtual Economy",
+            economyDesc: "Use real KAS to develop your plot and produce virtual zkaspa. Participate in a dynamic and constantly evolving economy.",
+            events: "🎭 Dynamic Events",
+            eventsDesc: "Unexpected events will influence your production and strategy, just like in real life.",
+            energy: "⚡ Energy Management",
+            energyDesc: "KasLand inhabitants will need to balance energy production and consumption to maximize their gains. Invest in sustainable solutions for the future of your city.",
+            redistribution: "🤝 Community Redistribution",
+            redistributionDesc: "A portion of the KAS is redistributed to KasLand inhabitants based on the ZKaspa collected, and another portion is redistributed to official Kaspa community projects, strengthening the overall ecosystem.",
+            credits: "© 2024 KasLand. All rights reserved.",
+            countdownTitle: "Time remaining until BETA release:",
+            countdownDays: "days",
+            countdownHours: "hours",
+            countdownPassed: "The target date has passed!",
+            countdownMinutes: "minutes",
+            countdownSeconds: "seconds",
+            temporaryMessage: "Beta release scheduled for September 2024"
+        },
+        fr: {
+            title: "KasLand - Un monde virtuel sur la blockchain Kaspa",
+            welcome: "Bienvenue dans KasLand",
+            firstGame: "Le premier jeu développé sur la blockchain Kaspa",
+            communityTitle: "🌟 Jeu géré par la communauté",
+            community: "Un jeu créé pour la communauté, géré par la communauté. Nous comptons mettre en place un système démocratique pour que la communauté puisse influencer l'évolution du jeu.",
+            discord: "Rejoignez notre Discord pour en savoir plus",
+            buildingsEconomy: "🏘️ Bâtiments et Économie",
+            buildingsDesc: "Achetez et améliorez votre parcelle avec différents types de bâtiments, de la petite maison au manoir en passant par les bâtiments de production d'électricité ou même de la ferme minage. Optimisez votre production de zkaspa.",
+            variants: "🎨 Variantes avec différents niveau de rareté",
+            variantsDesc: "Chaque bâtiment a plusieurs variantes, de la variante basique à la mythique, chacune avec sa propre rareté.",
+            economy: "💰 Économie réelle et virtuelle",
+            economyDesc: "Utilisez des KAS réels pour développer votre parcelle et produisez du zkaspa virtuel. Participez à une économie dynamique et en constante évolution.",
+            events: "🎭 Événements dynamiques",
+            eventsDesc: "Des événements imprévus influenceront votre production et votre stratégie, comme dans la vie réelle.",
+            energy: "⚡ Gestion de l'énergie",
+            energyDesc: "Les habitants de KasLand devront équilibrer production et consommation d'énergie pour maximiser leurs gains. Investissez dans des solutions durables pour l'avenir de votre ville.",
+            redistribution: "🤝 Redistribution communautaire",
+            redistributionDesc: "Une partie des KAS est redistribuée aux habitants de KasLand en fonction du ZKaspa collecté et une partie est redistribuée aux projets officiels de la communauté Kaspa, renforçant ainsi l'écosystème global.",
+            credits: "© 2024 KasLand. Tous droits réservés.",
+            countdownTitle: "Temps restant jusqu'à la sortie de la BETA :",
+            countdownDays: "jours",
+            countdownHours: "heures",
+            countdownPassed: "La date cible est passée !",
+            countdownMinutes: "minutes",
+            countdownSeconds: "secondes",
+            temporaryMessage: "Sortie de la Beta prévue courant septembre 2024"
+        },
+        zh: {
+            title: "KasLand - Kaspa区块链上的虚拟世界",
+            welcome: "欢迎来到KasLand",
+            firstGame: "Kaspa区块链上开发的第一款游戏",
+            communityTitle: "🌟 社区驱动的游戏",
+            community: "这是一个由社区创建、由社区管理的游戏。我们计划实施一个民主系统，让社区能够影响游戏的发展。",
+            discord: "加入我们的Discord了解更多",
+            buildingsEconomy: "🏘️ 建筑和经济",
+            buildingsDesc: "购买和升级您的地块，建造各种类型的建筑，从小房子到豪宅，包括发电建筑或矿场。优化您的zkaspa生产。",
+            variants: "🎨 不同稀有度的变体",
+            variantsDesc: "每个建筑都有多个变体，从基础到神话级别，每个都有自己的稀有度。",
+            economy: "💰 真实和虚拟经济",
+            economyDesc: "使用真实的KAS来开发您的地块并生产虚拟zkaspa。参与一个动态且不断发展的经济体系。",
+            events: "🎭 动态事件",
+            eventsDesc: "意外事件将影响您的生产和策略，就像现实生活一样。",
+            energy: "⚡ 能源管理",
+            energyDesc: "KasLand的居民需要平衡能源生产和消耗以最大化收益。为城市的未来投资可持续的解决方案。",
+            redistribution: "🤝 社区再分配",
+            redistributionDesc: "部分KAS根据收集的ZKaspa重新分配给KasLand居民，另一部分重新分配给Kaspa社区的官方项目，从而加强整个生态系统。",
+            credits: "© 2024 KasLand。保留所有权利。",
+            countdownTitle: "距离BETA版发布还剩：",
+            countdownDays: "天",
+            countdownHours: "小时",
+            countdownPassed: "目标日期已过！",
+            countdownMinutes: "分钟",
+            countdownSeconds: "秒",
+            temporaryMessage: "Beta版计划于2024年9月发布"
+        },
+        it: {
+            title: "KasLand - Un mondo virtuale sulla blockchain Kaspa",
+            welcome: "Benvenuto in KasLand",
+            firstGame: "Il primo gioco sviluppato sulla blockchain Kaspa",
+            communityTitle: "🌟 Gioco guidato dalla comunità",
+            community: "Un gioco creato per la comunità, gestito dalla comunità. Prevediamo di implementare un sistema democratico affinché la comunità possa influenzare l'evoluzione del gioco.",
+            discord: "Unisciti al nostro Discord per saperne di più",
+            buildingsEconomy: "🏘️ Edifici ed Economia",
+            buildingsDesc: "Acquista e migliora il tuo appezzamento con diversi tipi di edifici, dalle piccole case alle ville, inclusi edifici per la produzione di energia o fattorie di mining. Ottimizza la tua produzione di zkaspa.",
+            variants: "🎨 Varianti con diversi livelli di rarità",
+            variantsDesc: "Ogni edificio ha più varianti, dalla base alla mitica, ciascuna con la propria rarità.",
+            economy: "💰 Economia reale e virtuale",
+            economyDesc: "Usa KAS reali per sviluppare il tuo appezzamento e produrre zkaspa virtuale. Partecipa a un'economia dinamica e in continua evoluzione.",
+            events: "🎭 Eventi dinamici",
+            eventsDesc: "Eventi imprevisti influenzeranno la tua produzione e strategia, proprio come nella vita reale.",
+            energy: "⚡ Gestione dell'energia",
+            energyDesc: "Gli abitanti di KasLand dovranno bilanciare la produzione e il consumo di energia per massimizzare i loro guadagni. Investi in soluzioni sostenibili per il futuro della tua città.",
+            redistribution: "🤝 Ridistribuzione alla comunità",
+            redistributionDesc: "Una parte dei KAS viene ridistribuita agli abitanti di KasLand in base allo ZKaspa raccolto, e un'altra parte viene ridistribuita ai progetti ufficiali della comunità Kaspa, rafforzando così l'intero ecosistema.",
+            credits: "© 2024 KasLand. Tutti i diritti riservati.",
+            countdownTitle: "Tempo rimanente fino al rilascio della BETA:",
+            countdownDays: "giorni",
+            countdownHours: "ore",
+            countdownPassed: "La data obiettivo è passata!",
+            countdownMinutes: "minuti",
+            countdownSeconds: "secondi",
+            temporaryMessage: "Uscita della Beta prevista per settembre 2024"
+        },
+        es: {
+            title: "KasLand - Un mundo virtual en la blockchain de Kaspa",
+            welcome: "Bienvenido a KasLand",
+            firstGame: "El primer juego desarrollado en la blockchain de Kaspa",
+            communityTitle: "🌟 Juego impulsado por la comunidad",
+            community: "Un juego creado para la comunidad, gestionado por la comunidad. Planeamos implementar un sistema democrático para que la comunidad pueda influir en la evolución del juego.",
+            discord: "Únete a nuestro Discord para saber más",
+            buildingsEconomy: "🏘️ Edificios y Economía",
+            buildingsDesc: "Compra y mejora tu parcela con diferentes tipos de edificios, desde pequeñas casas hasta mansiones, incluyendo edificios de generación de energía o granjas de minería. Optimiza tu producción de zkaspa.",
+            variants: "🎨 Variantes con diferentes niveles de rareza",
+            variantsDesc: "Cada edificio tiene múltiples variantes, desde la básica hasta la mítica, cada una con su propia rareza.",
+            economy: "💰 Economía real y virtual",
+            economyDesc: "Utiliza KAS reales para desarrollar tu parcela y producir zkaspa virtual. Participa en una economía dinámica y en constante evolución.",
+            events: "🎭 Eventos dinámicos",
+            eventsDesc: "Eventos inesperados influirán en tu producción y estrategia, como en la vida real.",
+            energy: "⚡ Gestión de energía",
+            energyDesc: "Los habitantes de KasLand deberán equilibrar la producción y el consumo de energía para maximizar sus ganancias. Invierte en soluciones sostenibles para el futuro de tu ciudad.",
+            redistribution: "🤝 Redistribución comunitaria",
+            redistributionDesc: "Una parte de los KAS se redistribuye a los habitantes de KasLand en función del ZKaspa recolectado, y otra parte se redistribuye a los proyectos oficiales de la comunidad Kaspa, fortaleciendo así todo el ecosistema.",
+            credits: "© 2024 KasLand. Todos los derechos reservados.",
+            countdownTitle: "Tiempo restante hasta el lanzamiento de la BETA:",
+            countdownDays: "días",
+            countdownHours: "horas",
+            countdownPassed: "¡La fecha objetivo ha pasado!",
+            countdownMinutes: "minutos",
+            countdownSeconds: "segundos",
+            temporaryMessage: "Lanzamiento de la Beta previsto para septiembre de 2024"
+        },
+        de: {
+            title: "KasLand - Eine virtuelle Welt auf der Kaspa-Blockchain",
+            welcome: "Willkommen bei KasLand",
+            firstGame: "Das erste Spiel, das auf der Kaspa-Blockchain entwickelt wurde",
+            communityTitle: "🌟 Von der Community gesteuertes Spiel",
+            community: "Ein Spiel, das von der Gemeinschaft erstellt und verwaltet wird. Wir planen die Einführung eines demokratischen Systems, damit die Gemeinschaft die Entwicklung des Spiels beeinflussen kann.",
+            discord: "Treten Sie unserem Discord bei, um mehr zu erfahren",
+            buildingsEconomy: "🏘️ Gebäude und Wirtschaft",
+            buildingsDesc: "Kaufen und verbessern Sie Ihr Grundstück mit verschiedenen Gebäudetypen, von kleinen Häusern bis hin zu Villen, einschließlich Stromerzeugungs- und Mining-Farmen. Optimieren Sie Ihre zkaspa-Produktion.",
+            variants: "🎨 Varianten mit unterschiedlichen Seltenheitsgraden",
+            variantsDesc: "Jedes Gebäude hat mehrere Varianten, von einfach bis mythisch, jede mit eigener Seltenheit.",
+            economy: "💰 Reale und virtuelle Wirtschaft",
+            economyDesc: "Verwenden Sie echte KAS, um Ihr Grundstück zu entwickeln und virtuelles zkaspa zu produzieren. Nehmen Sie an einer dynamischen und sich ständig weiterentwickelnden Wirtschaft teil.",
+            events: "🎭 Dynamische Ereignisse",
+            eventsDesc: "Unerwartete Ereignisse werden Ihre Produktion und Strategie beeinflussen, genau wie im echten Leben.",
+            energy: "⚡ Energiemanagement",
+            energyDesc: "Die Bewohner von KasLand müssen die Energieproduktion und den Verbrauch ausgleichen, um ihre Gewinne zu maximieren. Investieren Sie in nachhaltige Lösungen für die Zukunft Ihrer Stadt.",
+            redistribution: "🤝 Gemeinschaftliche Umverteilung",
+            redistributionDesc: "Ein Teil der KAS wird basierend auf dem gesammelten ZKaspa an die Bewohner von KasLand umverteilt, und ein anderer Teil wird an offizielle Projekte der Kaspa-Gemeinschaft umverteilt, wodurch das gesamte Ökosystem gestärkt wird.",
+            credits: "© 2024 KasLand. Alle Rechte vorbehalten.",
+            countdownTitle: "Verbleibende Zeit bis zur BETA-Veröffentlichung:",
+            countdownDays: "Tage",
+            countdownHours: "Stunden",
+            countdownPassed: "Das Zieldatum ist verstrichen!",
+            countdownMinutes: "Minuten",
+            countdownSeconds: "Sekunden",
+            temporaryMessage: "Beta-Veröffentlichung für September 2024 geplant"
+        },
+        pt: {
+            title: "KasLand - Um mundo virtual na blockchain Kaspa",
+            welcome: "Bem-vindo ao KasLand",
+            firstGame: "O primeiro jogo desenvolvido na blockchain Kaspa",
+            communityTitle: "🌟 Jogo impulsionado pela comunidade",
+            community: "Um jogo criado pela comunidade, gerenciado pela comunidade. Planejamos implementar um sistema democrático para que a comunidade possa influenciar a evolução do jogo.",
+            discord: "Junte-se ao nosso Discord para saber mais",
+            buildingsEconomy: "🏘️ Edifícios e Economia",
+            buildingsDesc: "Compre e melhore seu lote com diferentes tipos de edifícios, de pequenas casas a mansões, incluindo edifícios de geração de energia ou fazendas de mineração. Otimize sua produção de zkaspa.",
+            variants: "🎨 Variantes com diferentes níveis de raridade",
+            variantsDesc: "Cada edifício tem múltiplas variantes, do básico ao mítico, cada uma com sua própria raridade.",
+            economy: "💰 Economia real e virtual",
+            economyDesc: "Use KAS real para desenvolver seu lote e produzir zkaspa virtual. Participe de uma economia dinâmica e em constante evolução.",
+            events: "🎭 Eventos dinâmicos",
+            eventsDesc: "Eventos inesperados influenciarão sua produção e estratégia, assim como na vida real.",
+            energy: "⚡ Gestão de energia",
+            energyDesc: "Os habitantes do KasLand precisarão equilibrar a produção e o consumo de energia para maximizar seus ganhos. Invista em soluções sustentáveis para o futuro da sua cidade.",
+            redistribution: "🤝 Redistribuição comunitária",
+            redistributionDesc: "Uma parte do KAS é redistribuída aos habitantes do KasLand com base no ZKaspa coletado, e outra parte é redistribuída aos projetos oficiais da comunidade Kaspa, fortalecendo todo o ecossistema.",
+            credits: "© 2024 KasLand. Todos os direitos reservados.",
+            countdownTitle: "Tempo restante até o lançamento da BETA:",
+            countdownDays: "dias",
+            countdownHours: "horas",
+            countdownPassed: "A data alvo já passou!",
+            countdownMinutes: "minutos",
+            countdownSeconds: "segundos",
+            temporaryMessage: "Lançamento da Beta previsto para setembro de 2024"
+        },
+        ru: {
+            title: "KasLand - Виртуальный мир на блокчейне Kaspa",
+            welcome: "Добро пожаловать в KasLand",
+            firstGame: "Первая игра, разработанная на блокчейне Kaspa",
+            communityTitle: "🌟 Игра, управляемая сообществом",
+            community: "Игра, созданная для сообщества и управляемая сообществом. Мы планируем внедрить демократическую систему, чтобы сообщество могло влиять на эволюцию игры.",
+            discord: "Присоединяйтесь к нашему Discord, чтобы узнать больше",
+            buildingsEconomy: "🏘️ Здания и экономика",
+            buildingsDesc: "Покупайте и улучшайте свой участок с различными типами зданий, от небольших домов до особняков, включая здания для производства энергии или майнинг-фермы. Оптимизируйте производство zkaspa.",
+            variants: "🎨 Варианты с разными уровнями редкости",
+            variantsDesc: "У каждого здания есть несколько вариантов, от базового до мифического, каждый со своей редкостью.",
+            economy: "💰 Реальная и виртуальная экономика",
+            economyDesc: "Используйте реальные KAS для развития своего участка и производства виртуальных zkaspa. Участвуйте в динамичной и постоянно развивающейся экономике.",
+            events: "🎭 Динамические события",
+            eventsDesc: "Неожиданные события будут влиять на ваше производство и стратегию, как в реальной жизни.",
+            energy: "⚡ Управление энергией",
+            energyDesc: "Жителям KasLand нужно будет балансировать производство и потребление энергии, чтобы максимизировать свои доходы. Инвестируйте в устойчивые решения для будущего вашего города.",
+            redistribution: "🤝 Перераспределение в сообществе",
+            redistributionDesc: "Часть KAS перераспределяется жителям KasLand на основе собранного ZKaspa, а другая часть перераспределяется официальным проектам сообщества Kaspa, укрепляя общую экосистему.",
+            credits: "© 2024 KasLand. Все права защищены.",
+            countdownTitle: "Оставшееся время до выпуска BETA:",
+            countdownDays: "дней",
+            countdownHours: "часов",
+            countdownPassed: "Целевая дата прошла!",
+            countdownMinutes: "минут",
+            countdownSeconds: "секунд",
+            temporaryMessage: "Выпуск бета-версии запланирован на сентябрь 2024 года"
+        }
+    };
+
+function changeLanguage() {
+    const language = document.getElementById("languageSelect").value;
+    const t = translations[language];
+    
+    document.title = t.title;
+    document.querySelector("header h1").textContent = t.welcome;
+    document.querySelector("header p").textContent = t.firstGame;
+    
+    document.querySelector(".community-message h2").textContent = t.communityTitle;
+    document.querySelector(".community-message p").textContent = t.community;
+    document.querySelector(".community-message .cta-button").textContent = t.discord;
+
+    // Temporary message in place of the counter - comment out when implementing the counter!
+    document.getElementById("temporary-message").textContent = translations[language].temporaryMessage;
+    
+    const features = document.querySelectorAll(".feature");
+    features[0].querySelector("h2").textContent = t.buildingsEconomy;
+    features[0].querySelector("p").textContent = t.buildingsDesc;
+    features[1].querySelector("h2").textContent = t.variants;
+    features[1].querySelector("p").textContent = t.variantsDesc;
+    features[2].querySelector("h2").textContent = t.economy;
+    features[2].querySelector("p").textContent = t.economyDesc;
+    features[3].querySelector("h2").textContent = t.events;
+    features[3].querySelector("p").textContent = t.eventsDesc;
+    features[4].querySelector("h2").textContent = t.energy;
+    features[4].querySelector("p").textContent = t.energyDesc;
+    features[5].querySelector("h2").textContent = t.redistribution;
+    features[5].querySelector("p").textContent = t.redistributionDesc;
+    
+    document.getElementById("warningText").textContent = t.warning.replace('⚠️', '').trim();
+    document.querySelector(".warning p").textContent = t.warningDesc;
+    updateCountdown();
+
+    document.documentElement.lang = language;
+}
+
+function updateCountdown() {
+    const language = document.getElementById("languageSelect").value;
+    const t = translations[language];
+
+    const targetDate = new Date("2024-09-30T00:00:00").getTime();
+    const now = new Date().getTime();
+    const difference = targetDate - now;
+
+    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+    if (difference > 0) {
+        document.getElementById("countdown-title").textContent = t.countdownTitle;
+        document.getElementById("countdown-timer").innerHTML = `
+            ${days} ${t.countdownDays} ${hours} ${t.countdownHours} ${minutes} ${t.countdownMinutes} ${seconds} ${t.countdownSeconds}
+        `;
+    } else {
+        document.getElementById("countdown").innerHTML = `<div id="countdown-title">${t.countdownPassed}</div>`;
+    }
+}
+
+    updateCountdown();
+    const countdownTimer = setInterval(updateCountdown, 1000); // Update every second
+
+    </script>
+</body>
+</html>

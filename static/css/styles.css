@@ -1,0 +1,968 @@
+/*
+KasLand Application
+Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
+
+This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 
+International License. To view a copy of this license, visit:
+http://creativecommons.org/licenses/by-nc/4.0/
+
+You are free to:
+- Share: copy and redistribute the material in any medium or format
+- Adapt: remix, transform, and build upon the material
+
+Under the following terms:
+- Attribution: You must give appropriate credit, provide a link to the license,
+  and indicate if changes were made.
+- NonCommercial: You may not use the material for commercial purposes.
+
+For any commercial use or licensing inquiries, please contact: rymentz.studio@gmail.com
+*/
+
+/* Styles de base pour le corps et l'html */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #90bd28;
+    color: #f0f0f0;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Style du titre du jeu (plus utilisé) */
+#game-title {
+    font-size: 24px;
+    margin: 0;
+    padding: 10px 0;
+    text-align: center;
+    /*background-color: rgba(0, 0, 0, 0.6);*/
+    color: #40BFAA;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    letter-spacing: 1px;
+}
+
+/* Conteneur principal du jeu */
+#game-container {
+    position: absolute;
+    top: 60px; /* Ajustez cette valeur selon la hauteur de votre barre KasWare */
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Conteneur des tuiles (parcelles) */
+#tiles-container {
+    position: absolute;
+    transform-origin: top left;
+    transition: transform 0.3s ease-out;
+    transform: rotateX(60deg) rotateZ(45deg);
+}
+
+/* Style individuel des tuiles */
+.tile {
+    position: absolute;
+    width: 100px;
+    height: 65px;
+    transform-style: preserve-3d;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    /* Supprimé: box-shadow: 0 4px 8px rgba(0,0,0,0.2); */
+}
+
+/* Style des images des tuiles */
+.tile-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    /* Supprimé: border-radius: 5px; */
+}
+
+/* Effet de survol sur les tuiles */
+.tile:hover .tile-image {
+    filter: brightness(1.2);
+    /* Supprimé: transform: scale(1.05); */
+}
+
+/* Si notre utilisateur possède une parcelle et est connecté avec KasWare */
+.tile.user-owned::before {
+    content: '';
+    position: absolute;
+    width: 68px;
+    height: 68px;
+    top: 4px;  /* Déplace l'élément vers le haut */
+    left: 15px;  /* Déplace l'élément vers la droite */
+    right: 0;
+    bottom: 0;
+    border: 2px solid darkgreen;
+    transform: rotateX(60deg) rotateZ(45deg);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Style des arbres décoratifs */
+.tree {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
+}
+
+.tree img {
+    width: 12px;
+    height: auto;
+}
+
+/* Conteneur des boutons de contrôle */
+#controls {
+    position: fixed;
+    top: 105px; /* Augmentez cette valeur pour laisser de l'espace pour le message de statut */
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Style des boutons de contrôle */
+#controls button {
+    padding: 12px 18px;
+    background-color: #3a7021;
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Effet de survol sur les boutons de contrôle */
+#controls button:hover {
+    background-color: #4a8f29;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+}
+
+/* Styles communs pour les panneaux d'information */
+#info, #legend, #parcel-info, #top-wallets-container {
+    background-color: rgba(40, 40, 40, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    padding: 15px;
+    color: #f0f0f0;
+}
+
+/* Panneau d'information principal */
+#info {
+    position: fixed;
+    top: 105px; /* Augmentez cette valeur pour laisser de l'espace pour la barre KasWare */
+    left: 20px;
+    z-index: 1000;
+    max-width: 300px;
+    background-color: rgba(40, 40, 40, 0.9);
+    border-radius: 10px;
+    padding: 15px;
+    color: #f0f0f0;
+}
+
+/* Style pour les liens dans le panneau d'information */
+#info a {
+    color: #7289DA;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+    display: block;
+    margin-top: 10px;
+}
+
+#info a:hover {
+    color: #5673c8;
+    text-decoration: underline;
+}
+
+/* Style spécifique pour le lien Discord */
+#discord-link {
+    display: inline-block;
+    font-size: 12px;
+    margin-right: 10px;
+}
+
+/* Style spécifique pour le lien Top 10 */
+#top-wallets-link {
+    display: inline-block;
+    font-size: 12px;
+    margin-right: 10px;
+
+}
+
+/* Style pour le lien du disclaimer */
+#disclaimer-link {
+    display: inline-block;
+    font-size: 12px;
+    margin-right: 10px;
+
+    color: #888;
+}
+
+#disclaimer-link::before {
+    content: "⚠️ ";  /* Émoji d'avertissement */
+}
+
+/*Bouton pour fermer le panel info*/
+#close-info {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+#toggle-info {
+    display: none;
+}
+
+/* Panneau de légende */
+#legend {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+}
+
+/* Éléments individuels de la légende */
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* Couleurs de la légende */
+.legend-color {
+    width: 25px;
+    height: 25px;
+    margin-right: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* En-tête de la légende */
+#legend-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* Pour l'ajout de la description des variantes à la légende */
+.legend-section {
+    margin-top: 20px;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+}
+
+.legend-section h4 {
+    margin-bottom: 10px;
+}
+
+.rarity-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.rarity-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+/* Bouton de fermeture de la légende */
+#close-legend {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.4em;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+/* Effet de survol sur le bouton de fermeture de la légende */
+#close-legend:hover {
+    color: #ff6b6b;
+}
+
+/* Panneau d'information sur les parcelles */
+#parcel-info {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: 300px;
+    max-height: 80vh;
+    overflow-y: auto;
+    word-wrap: break-word;
+    box-sizing: border-box;
+}
+
+/* Conteneur d'informations sur la boutique */
+#shop-info-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(40, 40, 40, 0.9);
+    color: #f0f0f0;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 1000;
+    max-width: 80%;
+    max-height: 80%;
+    overflow-y: auto;
+}
+
+/* Titre de la section boutique */
+#shop-info-container h2 {
+    color: #7289DA;
+    border-bottom: 2px solid #7289DA;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+/* Bouton de fermeture de la boutique */
+#close-shop-info {
+    margin-top: 15px;
+    padding: 12px 18px;
+    background-color: #3a7021;
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Effet de survol sur le bouton de fermeture de la boutique */
+#close-shop-info:hover {
+    background-color: #4a8f29;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+}
+
+/* Conteneur de l'adresse Kaspa */
+.address-container {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+/* Champ d'adresse Kaspa */
+#kaspa-address {
+    flex-grow: 1;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px 0 0 4px;
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+/* Bouton de copie de l'adresse */
+#copy-address {
+    padding: 10px 15px;
+    background-color: #3a7021;
+    color: #fff;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* Effet de survol sur le bouton de copie */
+#copy-address:hover {
+    background-color: #4a8f29;
+}
+
+/* Avestissement dans les infos sur l'achat des parcelles */ 
+.warning-box {
+    background-color: #ffcccc;
+    border: 2px solid #ff0000;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    color: #000000; /* Texte en noir */
+}
+
+.warning-box h4 {
+    color: #ff0000;
+    margin-top: 0;
+}
+
+/* Message de statut de KasLand */
+#kasland-status {
+    display: none;
+    top: 60px; /* Ajustez cette valeur selon la hauteur de votre barre KasWare */
+    color: #ff6b6b;
+    font-weight: bold;
+    text-align: center;
+    padding: 15px;
+    background-color: rgba(0,0,0,0.7);
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+#maintenance-message {
+    position: fixed;
+    top: 60px; /* Ajustez cette valeur selon la hauteur de votre barre KasWare */
+    left: 0;
+    right: 0;
+    background-color: yellow; /* Couleur de fond originale */
+    color: black; /* Couleur de texte originale */
+    text-align: center;
+    padding: 10px;
+    z-index: 9998;
+    font-size: 14px;
+    line-height: 1.4;
+    box-sizing: border-box;
+    width: 100%;
+    word-wrap: break-word;
+    display: none; /* Caché par défaut */
+}
+
+/* Liens dans les panneaux d'information */
+#info a, #top-wallets-container a {
+    color: #7289DA;
+    text-decoration: none;
+    font-weight: bold;
+    margin-top: 15px;
+    display: inline-block;
+    transition: color 0.3s ease;
+}
+
+/* Effet de survol sur les liens */
+#info a:hover, #top-wallets-container a:hover {
+    color: #5673c8;
+    text-decoration: underline;
+}
+
+/* Conteneur des meilleurs portefeuilles */
+#top-wallets-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 80%;
+    max-height: 80%;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+/* Titre de la section des meilleurs portefeuilles */
+#top-wallets-container h2 {
+    color: #7289DA;
+    border-bottom: 2px solid #7289DA;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+/* Liste des meilleurs portefeuilles */
+#top-wallets-container ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+/* Éléments individuels de la liste des meilleurs portefeuilles */
+#top-wallets-container li {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+/* Effet de survol sur les éléments de la liste */
+#top-wallets-container li:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+/* Style pour un déficit énergétique */
+.energy-deficit {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+/* Style pour la production de zkaspa */
+.zkaspa-production {
+    color: #51cf66;
+    font-weight: bold;
+}
+
+/* Style pour la période de grâce */
+.grace-period {
+    color: red;
+    font-weight: bold;
+}
+
+/* Style de la popup d'événement */
+.event-popup {
+    position: fixed;
+    top: calc(60px + 20px); /* 60px pour la hauteur de la barre KasWare + 20px de marge */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 1000;
+    max-width: 80%;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* Bouton dans la popup d'événement */
+.event-popup button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Indicateur d'événement en cours */
+#current-event-indicator {
+    position: fixed;
+    top: calc(60px + 10px); /* 60px pour la hauteur de la barre KasWare + 10px de marge */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 165, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Icône dans l'indicateur d'événement */
+#current-event-indicator i {
+    font-size: 20px;
+}
+
+/* Styles pour les changements d'énergie et de production */
+#energy-production-change,
+#energy-consumption-change,
+#zkaspa-production-change {
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+/* Effet toucher en mode tactile */
+.tile-touched {
+    animation: touch-effect 0.3s ease-out;
+}
+
+/* Lors de la mise en vente d'une parcelle on met un indicateur sur la tuile */
+.sale-indicator {
+    position: absolute;
+    top: 10px;
+    left: 25px;
+    background-color: rgba(255, 215, 0, 0.8);
+    color: black;
+    padding: 2px 5px;
+    font-size: 10px;
+    border-radius: 3px;
+}
+
+@keyframes touch-effect {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Permet d'afficher la rareté des batiments */
+.rarity-indicator {
+    position: absolute;
+    top: 50%; /* Positionne le bord supérieur de l'indicateur au milieu de la tuile */
+    left: 50%; /* Positionne le bord gauche de l'indicateur au milieu de la tuile */
+    transform: translate(-50%, -50%); /* Décale l'indicateur de la moitié de sa largeur vers la gauche et de la moitié de sa hauteur vers le haut */
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 8px;
+    font-weight: bold;
+    color: white;
+    opacity: 0.7;
+}
+
+.rarity-indicator.mythic { background-color: #ff00ff; }
+.rarity-indicator.legendary { background-color: #ffa500; }
+.rarity-indicator.epic { background-color: #a040a0; }
+.rarity-indicator.rare { background-color: #4040ff; }
+.rarity-indicator.uncommon { background-color: #40c040; }
+.rarity-indicator.common { background-color: #b0b0b0; }
+.rarity-indicator.basic { background-color: #d3d3d3; }
+
+/* Pour la gestion de la barre KasWare en haut de l'écran */
+.kasware-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #15202B;
+    padding: 5px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 9999;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    height: 40px;
+}
+
+.kasware-logo-container {
+    display: flex;
+    align-items: center;
+}
+
+#kasware-logo-img {
+    height: 30px;
+    width: auto;
+}
+
+.beta-tag {
+    background-color: #ff6b6b;
+    color: white;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+    margin-left: 5px;
+    transform: translateY(-9px);
+    display: inline-block;
+}
+
+.kasware-right-section {
+    display: flex;
+    align-items: center;
+}
+
+.kasware-info {
+    color: #ffffff;
+    font-size: 14px;
+    margin-right: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px; /* Ajustez cette valeur selon vos besoins */
+}
+
+.kasware-buttons {
+    display: flex;
+    align-items: center;
+}
+
+.kasware-button, .kasware-welcome {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #192734;
+    border: 1px solid #38444d;
+    color: #ffffff;
+    padding: 0 10px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 30px;
+    line-height: 30px;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.kasware-button:hover {
+    background-color: #22303c;
+}
+
+.kasware-icon {
+    font-size: 16px;
+    margin-right: 8px;
+    color: #8899a6; /* Couleur grise par défaut */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kasware-button.connected .kasware-icon {
+    color: #48ff1b; /* Couleur verte quand connecté */
+}
+
+.beta-tag {
+    background-color: #ff6b6b;
+    color: white;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+    margin-left: 5px;
+    transform: translateY(-9px);
+    display: inline-block;
+}
+
+/* Styles pour les appareils mobiles */
+@media (max-width: 768px) {
+
+    #game-container {
+        top: 40px; /* Réduit de 60px à 40px pour s'adapter à la barre plus basse sur mobile */
+    }
+
+    .kasware-bar {
+        padding: 5px 10px;
+        height: 30px;
+        justify-content: space-between; /* Assure que le logo et le bouton sont aux extrémités */
+    }
+
+    #kasware-logo-img {
+        height: 20px;
+    }
+
+    .kasware-info {
+        display: none; /* Cache les informations textuelles */
+    }
+
+    .kasware-right-section > *:not(.kasware-buttons) {
+        display: none !important;
+    }
+
+    .kasware-button, .kasware-welcome {
+        padding: 0 8px;
+        font-size: 12px;
+        height: 24px;
+        line-height: 24px;
+        max-width: none; /* Permet au bouton de prendre sa taille naturelle */
+    }
+
+    .kasware-icon {
+        font-size: 14px;
+        margin-right: 4px;
+    }
+
+    .beta-tag {
+        font-size: 10px;
+        padding: 1px 4px;
+        margin-left: 5px;
+        transform: translateY(-2px); /* Ajustement pour mobile */
+    }
+
+    /* Pour le message de maintenance */
+    #maintenance-message {
+        top: auto; /* Annule la position top */
+        bottom: 0; /* Placé en bas de l'écran sur mobile */
+        font-size: 12px;
+        padding: 5px;
+    }
+
+    /* Pour le message de statut */
+    #kasland-status {
+        top: auto; /* Annule la position top */
+        bottom: 0; /* Place le message en bas de l'écran */
+        left: 0;
+        right: 0;
+        margin-top: 0;
+        border-radius: 0; /* Optionnel : supprime les coins arrondis en bas de l'écran */
+    }
+
+    #game-title {
+        font-size: 20px;
+        padding: 8px 0;
+    }
+
+    /* Repositionnement des contrôles pour les écrans mobiles */
+    #controls {
+        top: 50px;
+        right: 15px;
+        gap: 12px;
+    }
+
+    /* Style des boutons de contrôle pour les écrans mobiles */
+    #controls button {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0;
+        background-color: rgba(58, 112, 33, 0.9);
+        position: relative; /* Ajoutez ceci */
+    }
+
+    /* Style des icônes dans les boutons de contrôle */
+    #controls button::before {
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 20px;
+        color: #fff;
+        position: absolute; /* Ajoutez ceci */
+        top: 50%; /* Ajoutez ceci */
+        left: 50%; /* Ajoutez ceci */
+        transform: translate(-50%, -50%); /* Ajoutez ceci */
+    }
+
+    /* Icône pour le bouton plein écran */
+    #fullscreen-btn::before {
+        content: "\f065";
+    }
+
+    /* Icône pour le bouton de légende */
+    #show-legend::before {
+        content: "\f05a";
+    }
+
+    /* Icône pour le bouton d'information de la boutique */
+    #shop-info::before {
+        content: "\f07a";
+    }
+
+    #toggle-info::before {
+        content: "\f080"; /* Code Unicode pour l'icône "chart-bar" de Font Awesome */
+    }
+    
+    /* Ajustement du panneau d'information pour les écrans mobiles */
+    #info {
+        font-size: 14px;
+        padding: 10px;
+        top: 50px;
+        left: 15px;
+    }
+
+    /* Style de la légende pour les écrans mobiles */    
+    #legend {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        margin: 0;
+        border-radius: 15px 15px 0 0;
+    }
+
+    /* Style de la légende lorsqu'elle est développée */
+    #legend.expanded {
+        transform: translateY(0);
+    }
+
+    /* Style de l'en-tête de la légende */
+    #legend-header {
+        padding: 12px;
+        cursor: pointer;
+    }
+
+    /* Style du contenu de la légende */
+    #legend-content {
+        display: none;
+        padding: 0 12px 12px;
+    }
+
+    /* Affichage du contenu de la légende lorsqu'elle est développée */
+    #legend.expanded #legend-content {
+        display: block;
+    }
+
+    /* Style de l'indicateur d'événement en cours pour les écrans mobiles */
+    #current-event-indicator {
+        top: auto;
+        bottom: 20px;
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+    /*bouton pour les infos qu'on ferme si pas besoin (ouvert par défaut) */
+    #toggle-info {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0;
+        background-color: rgba(58, 112, 33, 0.9);
+        position: relative;
+    }
+
+    #toggle-info::before {
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 20px;
+        color: #fff;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .event-popup {
+        top: calc(40px + 10px); /* Ajustez si la barre KasWare est plus petite sur mobile */
+        max-width: 90%;
+        padding: 15px;
+    }
+
+    #current-event-indicator {
+        top: calc(40px + 5px); /* Ajustez si la barre KasWare est plus petite sur mobile */
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+
+    #current-event-indicator i {
+        font-size: 16px;
+    }
+}

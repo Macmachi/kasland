@@ -1,0 +1,141 @@
+<!--
+KasLand Application
+Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
+
+This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 
+International License. To view a copy of this license, visit:
+http://creativecommons.org/licenses/by-nc/4.0/
+
+You are free to:
+- Share: copy and redistribute the material in any medium or format
+- Adapt: remix, transform, and build upon the material
+
+Under the following terms:
+- Attribution: You must give appropriate credit, provide a link to the license,
+  and indicate if changes were made.
+- NonCommercial: You may not use the material for commercial purposes.
+
+For any commercial use or licensing inquiries, please contact: rymentz.studio@gmail.com
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KasLand</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon/favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/favicon/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='images/favicon/site.webmanifest') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="kasware-bar">
+        <div class="kasware-logo-container">
+            <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="KasLand Logo" id="kasware-logo-img">
+            <span class="beta-tag">BETA</span>
+        </div>
+        <div class="kasware-right-section">
+            <div id="kasware-info" class="kasware-info"></div>
+            <div class="kasware-buttons">
+                <button id="connect-kasware" class="kasware-button">
+                    <span class="kasware-icon">&#9679;</span>
+                    <span id="kasware-address">Connect to KasWare</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="kasland-status"></div>
+    <div id="game-container">
+        <div id="tiles-container"></div>
+    </div>
+    <div id="controls">
+        <button id="fullscreen-btn">Fullscreen</button>
+        <button id="show-legend">Show Legend</button>
+        <button id="shop-info">Buy / Sell Parcel</button>
+        <button id="toggle-info" class="control-btn" style="display: none;">Info</button>
+    </div>
+    <div id="info">
+        <button id="close-info">X</button>
+        🏘️ Total parcels: <span id="total-parcels">0</span><br>
+        💰 Community fund: <span id="community-fund">0</span> KAS<br>
+        🔄 Amount to redistribute: <span id="redistribution-amount">0</span> KAS<br>
+        👥 Number of Kaspians: <span id="unique-owners">0</span><br>
+        ⚡ Total energy production: <span id="total-energy-production" class="energy-indicator">0</span> <span id="energy-production-change"></span><br>
+        🔋 Total energy consumption: <span id="total-energy-consumption" class="energy-indicator">0</span> <span id="energy-consumption-change"></span><br>
+        🔮 Predicted zkaspa production: <span id="predicted-zkaspa-production" class="energy-indicator">0</span> <span id="zkaspa-production-change"></span><br>
+        💎 Total zkaspa produced: <span id="total-zkaspa">0</span><br>
+        <a href="https://discord.gg/UuxeTb42P9" target="_blank" id="discord-link">💬 Discord</a>|
+        <a href="#" id="top-wallets-link">🏆 Top 10 richest Kaspians</a>|
+        <a href="#" id="disclaimer-link">Disclaimer</a>        
+    </div>
+    <div id="top-wallets-container" style="display: none;"></div>
+    <div id="disclaimer-container" style="display: none;"></div>
+    <div id="legend">
+        <div id="legend-header">
+            <h3>Legend</h3>
+            <button id="close-legend">X</button>
+        </div>
+        <div id="legend-content">
+            <div class="legend-item">
+                <span>&#x1F33F;</span> 
+                <span>Available parcel</span>
+            </div>
+            <div class="legend-item">
+                <span>&#x1F3E0;</span>  
+                <span>Small house (2-3 KAS)<br>⚡ -5, 💎 +0.1/day</span>
+            </div>
+            <div class="legend-item">
+                <span>&#x1F4A1;</span>  
+                <span>Wind turbine (L1) (5-6 KAS)<br>⚡ +50, 💎 +0.2/day (+20% bonus)</span>
+            </div>
+            <!-- New section for rarity levels -->
+            <div class="legend-section">
+                <h4>Building Variant Rarity Levels</h4>
+                <p>Each building type has multiple variants with different rarity levels:</p>
+                <div class="rarity-item">
+                    <span class="rarity-color" style="background-color: #9B59B6;">🟣</span>
+                    <span>Mythic: ≤0.1% (Extremely rare)</span>
+                </div>
+                <div class="rarity-item">
+                    <span class="rarity-color" style="background-color: #E67E22;">🟠</span>
+                    <span>Legendary: 0.1-1% (Very rare)</span>
+                </div>
+                <div class="rarity-item">
+                    <span class="rarity-color" style="background-color: #3498DB;">🔵</span>
+                    <span>Epic: 1-5% (Rare and valuable)</span>
+                </div>
+                <div class="rarity-item">
+                    <span class="rarity-color" style="background-color: #2ECC71;">🟢</span>
+                    <span>Rare: 5-10% (Uncommon)</span>
+                </div>
+                <div class="rarity-item">
+                    <span class="rarity-color" style="background-color: #F1C40F;">🟡</span>
+                    <span>Uncommon: 10-20% (Notable)</span>
+                </div>
+                <div class="rarity-item">
+                    <span class="rarity-color" style="background-color: #ECF0F1;">⚪</span>
+                    <span>Common: 20-40% (Frequent)</span>
+                </div>
+                <div class="rarity-item">
+                    <span class="rarity-color" style="background-color: #34495E;">⚫</span>
+                    <span>Basic: >40% (Most common)</span>
+                </div>
+                <p>Rarer variants are more distinctive and may increase plot demand.</p>
+            </div>
+        </div>
+    </div>
+    <div id="shop-info-container" style="display: none;"></div>
+    <div id="parcel-info"></div>
+    <div id="current-event-indicator" style="display: none;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="current-event-name"></span>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
