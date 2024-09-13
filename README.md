@@ -1,6 +1,6 @@
 # KasLand (BETA)
 
-KasLand is an innovative blockchain-based management game on the Kaspa network. Players acquire and manage a single virtual plot, construct and upgrade buildings, and earn zkaspa (in-game currency), allowing them to recoup part of their investment.
+KasLand is an innovative BlockDAG-based management game on the Kaspa network. Players acquire and manage a single virtual plot, construct and upgrade buildings, and earn zkaspa (in-game currency), allowing them to recoup part of their investment.
 
 ## Core Mechanics 🎮
 
@@ -66,7 +66,7 @@ Variant levels: Mythic (≤0.1%), Legendary (0.1-1%), Epic (1-5%), Rare (5-10%),
 - Aiming to establish a strong community decision-making process
 - Players have a voice in the game's future development and direction
 
-Experience the fusion of blockchain technology and strategic management in KasLand. Optimize your single plot, contribute to community energy production, and earn zkaspa in this exciting, transparent, and community-driven blockchain-based game!
+Experience the fusion of BlockDAG technology and strategic management in KasLand. Optimize your single plot, contribute to community energy production, and earn zkaspa in this exciting, transparent, and community-driven blockchain-based game!
 
 # Documentation
 
