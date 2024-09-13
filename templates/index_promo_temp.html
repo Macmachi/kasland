@@ -524,7 +524,7 @@ const translations = {
         }
     };
 
-function changeLanguage() {
+    function changeLanguage() {
     const language = document.getElementById("languageSelect").value;
     const t = translations[language];
     
@@ -536,8 +536,11 @@ function changeLanguage() {
     document.querySelector(".community-message p").textContent = t.community;
     document.querySelector(".community-message .cta-button").textContent = t.discord;
 
-    // Temporary message in place of the counter - comment out when implementing the counter!
-    document.getElementById("temporary-message").textContent = translations[language].temporaryMessage;
+    // Temporary message in place of the counter
+    const temporaryMessage = document.getElementById("temporary-message");
+    if (temporaryMessage) {
+        temporaryMessage.textContent = t.temporaryMessage;
+    }
     
     const features = document.querySelectorAll(".feature");
     features[0].querySelector("h2").textContent = t.buildingsEconomy;
@@ -553,8 +556,10 @@ function changeLanguage() {
     features[5].querySelector("h2").textContent = t.redistribution;
     features[5].querySelector("p").textContent = t.redistributionDesc;
     
-    document.getElementById("warningText").textContent = t.warning.replace('⚠️', '').trim();
-    document.querySelector(".warning p").textContent = t.warningDesc;
+    // Remove the lines related to the warning element as it doesn't exist in the HTML
+    // document.getElementById("warningText").textContent = t.warning.replace('⚠️', '').trim();
+    // document.querySelector(".warning p").textContent = t.warningDesc;
+
     updateCountdown();
 
     document.documentElement.lang = language;
