@@ -23,6 +23,7 @@ const fullscreenBtn = document.getElementById('fullscreen-btn');
 const infoDiv = document.getElementById('info');
 const tileWidth = 100;
 const tileHeight = 50;
+/*To be updated for the game launch!!!*/ 
 const KASPA_MAIN_ADDRESS = "kaspa:qpyps5d97q2cc5xghytl2wpxdljlk5ndglxt9f6c8hmrlev779rd544fmjhy0";
 const tileCache = {};
 let scale = 1;
@@ -43,7 +44,7 @@ let initialPinchDistance = 0;
 let currentKaswareAccount = null;
 let currentUserInfo = null;
 
-// Nouvelle structure pour stocker les données localement
+// New structure to store data locally
 let localData = {
     parcels: {},
     mapSize: 0,
@@ -52,7 +53,7 @@ let localData = {
     lastUpdate: 0
 };
 
-// Désactiver la sélection globale
+// Disable global selection
 document.body.style.userSelect = 'none';
 document.body.style.webkitUserSelect = 'none';
 document.body.style.mozUserSelect = 'none';
@@ -111,7 +112,7 @@ async function initializeLocalData() {
         localData.gameInfo = gameInfoResponse;
         localData.energyStats = energyStatsResponse;
         localData.previousEnergyStats = {...localData.energyStats};
-        // Utilisez directement la valeur fournie par le serveur
+        // Use the value provided by the server directly
         localData.previousPredictedZkaspaProduction = energyStatsResponse.predicted_zkaspa_production;
         localData.lastUpdate = Date.now();
         
@@ -119,10 +120,10 @@ async function initializeLocalData() {
         //console.log('Game Info:', localData.gameInfo);
         //console.log('Energy Stats:', localData.energyStats);
         
-        // Mettre à jour les informations affichées
+        // Update displayed information
         updateInfo();
         
-        // Vérifier le statut de Kasland séparément
+        // Check KasLand status separately
         await checkKasLandStatus();
     } catch (error) {
         console.error('Erreur lors de l\'initialisation des données locales:', error);
@@ -141,10 +142,10 @@ function isMobile() {
  * Periodically updates local data.
  */
 async function updateLocalData() {
-    console.log('Début de la mise à jour des données locales');
+    console.log('Start of local data update');
     await initializeLocalData();
-    console.log('Données locales mises à jour avec succès');
-    updateGrid(); // pour mettre à jour l'affichage
+    console.log('Local data successfully updated');
+    updateGrid(); // to update the display
 
 }
 
@@ -157,7 +158,7 @@ function checkGracePeriod(nextFeeDate) {
     if (!nextFeeDate) return false;
     const now = Date.now() / 1000;
     const timeUntilFee = nextFeeDate - now;
-    const gracePeriodInSeconds = 7 * 24 * 60 * 60; // 7 jours en secondes
+    const gracePeriodInSeconds = 7 * 24 * 60 * 60; // 7 days in seconds
     return timeUntilFee <= gracePeriodInSeconds && timeUntilFee > 0;
 }
 
@@ -179,7 +180,7 @@ function updateEnergyIndicators(totalProduction, totalConsumption, predictedZkas
         }
     });
 
-    // Mettre en évidence la production prévue de zkaspa
+    // Highlight the predicted zkaspa production
     const predictedZkaspaElement = document.getElementById('predicted-zkaspa-production');
     if (predictedZkaspaElement) {
         if (isEnergyDeficit) {
@@ -194,7 +195,7 @@ function updateEnergyIndicators(totalProduction, totalConsumption, predictedZkas
         }
     }
 
-    // Mettre à jour les indicateurs visuels pour la production et la consommation d'énergie
+    // Update visual indicators for energy production and consumption
     const productionElement = document.getElementById('total-energy-production');
     const consumptionElement = document.getElementById('total-energy-consumption');
 
@@ -211,7 +212,7 @@ function updateEnergyIndicators(totalProduction, totalConsumption, predictedZkas
         }
     }
 
-    // Ajouter un indicateur visuel pour le déficit énergétique
+    // Add a visual indicator for energy deficit
     const energyStatusElement = document.getElementById('energy-status');
     if (energyStatusElement) {
         if (isEnergyDeficit) {
@@ -232,19 +233,19 @@ function createTile(parcel) {
     const key = `${x},${y}`;
     
     if (!id) {
-        console.warn(`Parcelle sans ID ignorée: x=${x}, y=${y}`);
+        console.warn(`Parcel without ID ignored: x=${x}, y=${y}`);
         return null;
     }
     
     let tile = tileCache[key];
     
     if (tile) {
-        // Mettre à jour la tuile existante
+        // Update the existing tile
         updateTile(tile, parcel);
         return tile;
     }
     
-    // Créer une nouvelle tuile si elle n'existe pas dans le cache
+    // Create a new tile if it doesn't exist in the cache
     tile = document.createElement('div');
     tile.className = `tile ${building_type ? building_type.toLowerCase() : 'parcel'}`;
     
@@ -255,10 +256,10 @@ function createTile(parcel) {
         if (building_type && building_variant) {
             tileImage.src = `/static/images/${building_type.toLowerCase()}_${building_variant.toLowerCase()}.webp`;
             
-            // Ajouter l'indicateur de rareté
+            // Add the rarity indicator
             const rarityIndicator = document.createElement('div');
             rarityIndicator.className = `rarity-indicator ${parcel.rarity.toLowerCase()}`;
-            rarityIndicator.textContent = parcel.rarity[0].toUpperCase(); // Première lettre de la rareté
+            rarityIndicator.textContent = parcel.rarity[0].toUpperCase(); // First letter of the rarity
             tile.appendChild(rarityIndicator);
         } else {
             console.warn(`Parcelle ${id} possédée mais sans type ou variante de bâtiment définis`);
@@ -316,13 +317,13 @@ function createTile(parcel) {
         );
 
         if (touchDuration < 500 && touchDistance < 10) {
-            // C'est un tap, pas un défilement
+            // It's a tap, not a scroll
             event.preventDefault();
             showParcelInfo(x, y);
         }
     });
 
-    // Ajouter la tuile au cache
+    // Add the tile to the cache
     tileCache[key] = tile;
 
     return tile;
@@ -349,7 +350,7 @@ function updateTile(tile, parcel) {
         if (building_type && building_variant) {
             tileImage.src = `/static/images/${building_type.toLowerCase()}_${building_variant.toLowerCase()}.webp`;
             
-            // Mettre à jour ou ajouter l'indicateur de rareté
+            // Update or add the rarity indicator
             let rarityIndicator = tile.querySelector('.rarity-indicator');
             if (!rarityIndicator) {
                 rarityIndicator = document.createElement('div');
@@ -364,21 +365,21 @@ function updateTile(tile, parcel) {
         }
     } else {
         tileImage.src = '/static/images/parcelle.webp';
-        // Supprimer l'indicateur de rareté si la parcelle n'est pas possédée
+        // Remove the rarity indicator if the parcel is not owned
         const rarityIndicator = tile.querySelector('.rarity-indicator');
         if (rarityIndicator) {
             rarityIndicator.remove();
         }
     }
 
-    // Implémentation de KasWare
+    // KasWare implementation
     if (parcel.owner_address && parcel.owner_address === currentKaswareAccount) {
         tile.classList.add('user-owned');
     } else {
         tile.classList.remove('user-owned');
     }
 
-    // Gestion de l'indicateur de vente
+    // Handle the sale indicator
     if (is_for_sale) {
         tile.classList.add('for-sale');
         let saleIndicator = tile.querySelector('.sale-indicator');
@@ -403,19 +404,19 @@ function updateTile(tile, parcel) {
  */
 function addTreesBorder(mapSize) {
     const isMobileDevice = typeof isMobile === 'function' && isMobile();
-    const borderWidth = isMobileDevice ? 20 : 20; // Réduire la largeur de la bordure sur mobile
-    const treeDensity = isMobileDevice ? 0.005 : 0.07; // Réduire la densité sur mobile
+    const borderWidth = isMobileDevice ? 20 : 20; // Reduce the border width on mobile
+    const treeDensity = isMobileDevice ? 0.005 : 0.07; // Reduce the density on mobile
 
     for (let i = -borderWidth; i < mapSize + borderWidth; i++) {
         for (let j = -borderWidth; j < mapSize + borderWidth; j++) {
-            if (i >= 0 && i < mapSize && j >= 0 && j < mapSize) continue; // Ignore l'intérieur de la carte
+            if (i >= 0 && i < mapSize && j >= 0 && j < mapSize) continue; // Ignore the inside of the map
 
             if (Math.random() < treeDensity) {
                 const tree = document.createElement('div');
                 tree.className = 'tree';
                 const treeImage = document.createElement('img');
                 
-                // Choisir aléatoirement entre deux types d'arbres
+                // Randomly choose between two types of trees
                 const treeType = Math.random() < 0.5 ? 'tree1' : 'tree2';
                 treeImage.src = `/static/images/${treeType}.webp`;
                 
@@ -426,8 +427,8 @@ function addTreesBorder(mapSize) {
                 tree.style.left = `${(i - j) * tileSpacingX}px`;
                 tree.style.top = `${(i + j) * tileSpacingY}px`;
 
-                // Ajouter une légère variation de taille pour plus de naturel
-                const scale = isMobileDevice ? 0.6 + Math.random() * 0.3 : 0.8 + Math.random() * 0.4; // Réduire la taille sur mobile
+                // Add a slight size variation for a more natural look
+                const scale = isMobileDevice ? 0.6 + Math.random() * 0.3 : 0.8 + Math.random() * 0.4; // Reduce the size on mobile
                 treeImage.style.transform = `scale(${scale})`;
 
                 tilesContainer.appendChild(tree);
@@ -479,7 +480,7 @@ async function showParcelInfo(x, y) {
                 📅 Last fee check: ${formatTimestamp(parcel.last_fee_check)}<br>
                 🔄 Fee frequency: ${parcel.fee_frequency} days
             `;
-            // Ajouter les informations de vente si la parcelle est à vendre
+            // Add sale information if the parcel is for sale
             if (parcel.is_for_sale) {
                 infoMessage += `
                     <br>
@@ -578,14 +579,14 @@ async function generateGrid() {
         mapSize = localData.mapSize;
         const parcels = Object.values(localData.parcels);
 
-        // Filtrer les parcelles valides et ignorer celles sans ID ou hors limites
+        // Filter valid parcels and ignore those without ID or out of bounds
         const validParcels = parcels.filter(parcel => {
             if (!parcel.id) {
                 console.log("Parcelle sans ID ignorée:", parcel);
                 return false;
             }
             if (parcel.x >= mapSize || parcel.y >= mapSize) {
-                console.log("Parcelle hors limites ignorée:", parcel);
+                console.log("Out-of-bounds parcel ignored:", parcel);
                 return false;
             }
             return true;
@@ -594,7 +595,7 @@ async function generateGrid() {
         totalParcels = validParcels.length;
         updateTotalParcels();
 
-        // Créer un ensemble pour suivre les clés de tuiles utilisées
+        // Create a set to track used tile keys
         const usedTileKeys = new Set();
 
         validParcels.forEach(parcel => {
@@ -608,7 +609,7 @@ async function generateGrid() {
             }
         });
 
-        // Supprimer les tuiles qui ne sont plus nécessaires
+        // Remove tiles that are no longer needed
         Object.keys(tileCache).forEach(key => {
             if (!usedTileKeys.has(key)) {
                 const tile = tileCache[key];
@@ -619,7 +620,7 @@ async function generateGrid() {
             }
         });
 
-        // Ajouter les arbres autour de la carte seulement si ce n'est pas déjà fait
+        // Add trees around the map only if it hasn't been done already
         if (!gridGenerated) {
             addTreesBorder(mapSize);
             gridGenerated = true;
@@ -629,8 +630,8 @@ async function generateGrid() {
     }
     adjustZoomForMapSize();
     
-    // Déplacer la vue initiale vers la gauche
-    offsetX = -mapSize * tileWidth / -2; // Ajustez cette valeur pour déplacer plus ou moins
+    // Move the initial view to the left
+    offsetX = -mapSize * tileWidth / -2; // Adjust this value to move more or less
     
     updateMapPosition();
     updateInfo();
@@ -675,17 +676,17 @@ function updateMapPosition() {
     const mapWidthPx = mapSize * tileWidth * scale;
     const mapHeightPx = mapSize * tileHeight * scale;
 
-    // Calculer une marge qui augmente avec le zoom
-    const baseMargin = containerWidth+3500 / 1; // Utilise un quart de la largeur du conteneur comme base
-    const margin = baseMargin * scale; // La marge augmente quand on zoome
+    // Calculate a margin that increases with zoom
+    const baseMargin = containerWidth+3500 / 1; // Uses a quarter of the container width as base
+    const margin = baseMargin * scale; // The margin increases when zooming
 
-    // Calculer les limites de déplacement
+    // Calculate movement limits
     const maxOffsetX = (mapWidthPx - containerWidth) / 2 / scale + margin / scale;
     const minOffsetX = -(mapWidthPx - containerWidth) / 2 / scale - margin / scale;
     const maxOffsetY = (mapHeightPx - containerHeight) / 2 / scale + margin / scale;
     const minOffsetY = -(mapHeightPx - containerHeight) / 2 / scale - margin / scale;
 
-    // Appliquer les limites
+    // Apply limits
     offsetX = Math.max(minOffsetX, Math.min(maxOffsetX, offsetX));
     offsetY = Math.max(minOffsetY, Math.min(maxOffsetY, offsetY));
 
@@ -706,21 +707,21 @@ function zoom(delta, centerX, centerY) {
     const zoomFactor = 0.1;
     const oldScale = scale;
     
-    // Inverser la direction du zoom pour le pincement
+    // Invert zoom direction for pinching
     const newScale = scale * (1 - delta * zoomFactor);
     
-    // Permettre un zoom avant plus important et limiter le zoom arrière à l'échelle initiale
+    // Allow more significant zoom in and limit zoom out to initial scale
     scale = Math.max(initialScale, Math.min(8, newScale));
 
     const containerRect = container.getBoundingClientRect();
     const mouseX = centerX - containerRect.left;
     const mouseY = centerY - containerRect.top;
 
-    // Calculer la position du curseur par rapport au centre de la carte
+    // Calculate cursor position relative to the map center
     const centerOffsetX = mouseX - containerRect.width / 2;
     const centerOffsetY = mouseY - containerRect.height / 2;
 
-    // Ajuster les offsets pour maintenir le point de zoom centré
+    // Adjust offsets to keep the zoom point centered
     offsetX += centerOffsetX / oldScale - centerOffsetX / scale;
     offsetY += centerOffsetY / oldScale - centerOffsetY / scale;
 
@@ -734,7 +735,7 @@ async function checkKasLandStatus() {
     try {
         const status = await apiCall('kasland_status', 'GET');
         if (status.is_full) {
-            // Afficher un message sur l'interface utilisateur
+            // Display a message on the user interface
             const statusMessage = document.createElement('div');
             statusMessage.id = 'kasland-status';
             statusMessage.textContent = status.message;
@@ -742,16 +743,16 @@ async function checkKasLandStatus() {
             statusMessage.style.fontWeight = 'bold';
             document.body.prepend(statusMessage);
         } else {
-            // Supprimer le message s'il existe
+            // Remove the message if it exists
             const existingMessage = document.getElementById('kasland-status');
             if (existingMessage) {
                 existingMessage.remove();
             }
         }
-        // Mettre à jour le statut dans les données locales
+        // Update the status in local data
         localData.kaslandStatus = status;
     } catch (error) {
-        console.error('Erreur lors de la vérification du statut de Kasland:', error);
+        console.error('Error while checking Kasland status:', error);
     }
 }
 
@@ -766,7 +767,7 @@ function updateInfo() {
             const element = document.getElementById(id);
             if (element) {
                 if (typeof value === 'number') {
-                    // Utiliser toFixed(2) seulement si la valeur a des décimales
+                    // Use toFixed(2) only if the value has decimals
                     element.textContent = Number.isInteger(value) ? value.toString() : value.toFixed(2);
                 } else {
                     element.textContent = value;
@@ -795,12 +796,12 @@ function updateInfo() {
         updateElement('total-energy-consumption', energyStats.total_energy_consumption);
         updateElement('total-zkaspa', energyStats.total_zkaspa);
 
-        // Vérifier le déficit énergétique pour la production prédite de zkaspa
+        // Check energy deficit for predicted zkaspa production
         const isEnergyDeficit = energyStats.total_energy_consumption > energyStats.total_energy_production;
         const predictedZkaspa = isEnergyDeficit ? 0 : energyStats.predicted_zkaspa_production;
         updateElement('predicted-zkaspa-production', predictedZkaspa);
 
-        // Mettre à jour les pourcentages de changement en comparant avec les statistiques d'hier
+        // Update change percentages by comparing with yesterday's statistics
         const yesterdayStats = gameInfo.yesterday_stats;
 
         if (yesterdayStats) {
@@ -815,14 +816,14 @@ function updateInfo() {
             predictedZkaspa
         );
 
-        // Mettre à jour l'indicateur de statut énergétique
+        // Update the energy status indicator
         const energyStatusElement = document.getElementById('energy-status');
         if (energyStatusElement) {
             energyStatusElement.textContent = isEnergyDeficit ? 'Energy Deficit' : 'Energy Surplus';
             energyStatusElement.className = isEnergyDeficit ? 'energy-deficit' : 'energy-surplus';
         }
 
-        // Mettre à jour l'indicateur d'événement en cours
+        // Update the current event indicator
         const currentEventElement = document.getElementById('current-event');
         if (currentEventElement) {
             currentEventElement.textContent = energyStats.event_type || 'No active event';
@@ -843,11 +844,11 @@ function handleIsometricClick(event) {
     const mouseX = (event.clientX - rect.left) / scale - offsetX;
     const mouseY = (event.clientY - rect.top) / scale - offsetY;
 
-    // Conversion des coordonnées de l'écran en coordonnées isométriques de la grille
+    // Convert screen coordinates to isometric grid coordinates
     const tileX = Math.round((mouseX / tileSpacingX + mouseY / tileSpacingY) / 2);
     const tileY = Math.round((mouseY / tileSpacingY - mouseX / tileSpacingX) / 2);
 
-    // Utilisez ces coordonnées pour identifier la parcelle cliquée
+    // Use these coordinates to identify the clicked parcel
     const parcelKey = `${tileX},${tileY}`;
     const parcel = localData.parcels[parcelKey];
 
@@ -882,7 +883,8 @@ function handleTouchMove(event) {
     if (event.touches.length === 2) {
         const currentDistance = getPinchDistance(event);
         const delta = initialPinchDistance - currentDistance;
-        const zoomFactor = delta * 0.01; // Ajustez cette valeur selon vos besoins
+        // Adjust this value according to your needs
+        const zoomFactor = delta * 0.01; 
         
         const centerX = (event.touches[0].clientX + event.touches[1].clientX) / 2;
         const centerY = (event.touches[0].clientY + event.touches[1].clientY) / 2;
@@ -926,18 +928,18 @@ function handleTouchEnd(event) {
         Math.pow(touchEndX - touchStartX, 2) + Math.pow(touchEndY - touchStartY, 2)
     );
 
-    // Vérifier si c'est un tap rapide (moins de 200ms et déplacement inférieur à 10px)
+    // Check if it's a quick tap (less than 200ms and movement less than 10px)
     if (touchDuration < 200 && touchDistance < 10) {
-        // C'est un tap rapide
+        // it's a quick tap
         const element = document.elementFromPoint(touchEndX, touchEndY);
         if (element && element.classList.contains('tile')) {
-            // Ajouter l'effet visuel
+            // Add visual effect
             element.classList.add('tile-touched');
             
-            // Retirer la classe après l'animation
+            // Remove the class after the animation
             setTimeout(() => {
                 element.classList.remove('tile-touched');
-            }, 300); // Correspond à la durée de l'animation
+            }, 300); // Corresponds to the animation duration
 
             const x = parseInt(element.dataset.x);
             const y = parseInt(element.dataset.y);
@@ -959,10 +961,10 @@ function getPinchDistance(event) {
 
 window.addEventListener('load', async () => {
     try {
-        // Initialiser les données locales
+        // Initialize local data
         await initializeLocalData();
 
-        // Vérifier et initialiser KasWare
+        // check and init KasWare
         if (isKaswareInstalled()) {
             try {
                 const accounts = await window.kasware.getAccounts();
@@ -970,35 +972,35 @@ window.addEventListener('load', async () => {
                     currentKaswareAccount = accounts[0];
                 }
             } catch (error) {
-                console.error('Erreur lors de la vérification du compte KasWare', error);
+                console.error('Error while checking KasWare account', error);
             }
         }
         await initKasware();
 
-        // Mettre à jour la grille
+        // Update the grid
         updateGrid();
 
-        // Vérifier le statut de maintenance
+        // Check maintenance status
         checkMaintenanceStatus();
-        setInterval(checkMaintenanceStatus, 180000); // Vérifier toutes les 3 minutes
+        setInterval(checkMaintenanceStatus, 180000); // Check every 3 minutes
 
-        // Vérifier les événements en cours (si cette fonction existe dans votre code)
+        // Check current events (if this function exists in your code)
         if (typeof checkCurrentEvents === 'function') {
             checkCurrentEvents();
         }
 
     } catch (error) {
-        console.error('Erreur lors de l\'initialisation de l\'application:', error);
+        console.error('Error during application initialization:', error);
     }
 });
 
-// Mettre à jour les données toutes les 3 minutes
+// Update data every 3 minutes
 setInterval(updateLocalData, 180000);
 
-// Initialisation
+// Initialization
 updateGrid();
 
-// Vérifier le statut de Kasland toutes les 60 secondes
+// Check KasLand status every 60 seconds
 setInterval(checkKasLandStatus, 60000);
 
 // Event Listeners
@@ -1101,7 +1103,7 @@ document.getElementById('disclaimer-link').addEventListener('click', (e) => {
         </ul>
         
         <h3>Data Collection and Privacy</h3>
-        <p>The only data collected by KasLand are the public wallet addresses that send money to the game's address. This information is anonymous and publicly available on the blockchain. We do not collect any personal information.</p>
+        <p>The only data collected by KasLand are the public wallet addresses that send money to the game's address. This information is anonymous and publicly available on the Kaspa BlockDAG. We do not collect any personal information.</p>
         <p>We do not use tracking cookies on this site, and we do not sell any information to third parties.</p>
         
         <h3>GDPR Compliance</h3>
@@ -1119,7 +1121,7 @@ document.getElementById('disclaimer-link').addEventListener('click', (e) => {
         <p>If you have any questions or concerns about this disclaimer or our practices, please contact us through our Discord server.</p>
     `;
         
-        const disclaimerContainer = document.getElementById('top-wallets-container'); // Réutiliser le même conteneur
+        const disclaimerContainer = document.getElementById('top-wallets-container'); // Reuse the same container
         disclaimerContainer.innerHTML = disclaimerContent + '<br><a href="#" id="back-link">Close</a>';
         disclaimerContainer.style.display = 'block';
         
@@ -1154,11 +1156,11 @@ async function connectKasware() {
     
     try {
         if (currentKaswareAccount) {
-            // Si déjà connecté, ne rien faire
+            // If already connected, do nothing
             //console.log('Already connected to KasWare');
             return currentKaswareAccount;
         } else {
-            // Si non connecté, demander la connexion
+            // If not connected, request connection
             const accounts = await window.kasware.requestAccounts();
             currentKaswareAccount = accounts[0];
             await updateKaswareBar();
@@ -1185,7 +1187,7 @@ async function updateKaswareBar() {
         addressSpan.textContent = `${addressStart}...${addressEnd}`;
         connectButton.classList.add('connected');
         
-        // Afficher les informations de l'utilisateur
+        // Display user information
         await updateUserInfo();
     } else {
         addressSpan.textContent = 'Connect to KasWare';
@@ -1229,8 +1231,8 @@ async function initKasware() {
             if (accounts.length > 0) {
                 currentKaswareAccount = accounts[0];
                 await updateKaswareBar();
-                await updateUserInfo();  // Ajoutez cette ligne
-                updateGrid();  // Ajoutez cette ligne si nécessaire
+                await updateUserInfo();  // Add this line
+                updateGrid();  // Add this line if necessary
             }
         } catch (error) {
             console.error('Error while checking KasWare account', error);
@@ -1247,7 +1249,7 @@ async function updateUserInfo() {
     
     if (currentKaswareAccount) {
         try {
-            // Parcourir toutes les parcelles dans le cache local
+            // Iterate through all parcels in the local cache
             const userParcel = Object.values(localData.parcels).find(parcel => parcel.owner_address === currentKaswareAccount);
             
             let infoText = '';
@@ -1293,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', function() {
     closeInfoBtn.addEventListener('click', function() {
         infoDiv.style.display = 'none';
         if (isMobile()) {
-            toggleInfoBtn.style.display = 'flex'; // Utilisez 'flex' au lieu de 'block' pour les contrôles mobiles
+            toggleInfoBtn.style.display = 'flex'; // Use 'flex' instead of 'block' for mobile controls
         } else {
             toggleInfoBtn.style.display = 'block';
         }
@@ -1393,7 +1395,7 @@ document.addEventListener('DOMContentLoaded', function() {
         addressInput.select();
         document.execCommand('copy');
         
-        // Optionnel : Afficher un message de confirmation
+        // Optional: Display a confirmation message
         const copyButton = document.getElementById('copy-address');
         const originalText = copyButton.textContent;
         copyButton.textContent = 'Copié !';
@@ -1446,7 +1448,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateLegendButtonText();
     }
 
-    // Gérer le clic sur l'en-tête de la légende (pour mobile)
+    // Handle click on the legend header (for mobile)
     legendHeader.addEventListener('click', function(e) {
         if (isMobile()) {
             toggleLegend();
@@ -1454,18 +1456,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Gérer le clic sur le bouton de fermeture (pour desktop)
+    // Handle click on the close button (for desktop)
     if (closeLegendBtn) {
         closeLegendBtn.addEventListener('click', toggleLegend);
     }
 
-    // Gérer le clic sur le bouton Show/Hide Legend
+    // Handle click on the Show/Hide Legend button
     showLegendBtn.addEventListener('click', toggleLegend);
 
-    // Configuration initiale
+    // Initial configuration
     updateLegendDisplay();
 
-    // Pour intégration du wallet Kasware on appelle initKasware
+    // For KasWare wallet integration, we call initKasware
     if (isKaswareInstalled()) {
         try {
             window.kasware.getAccounts().then(accounts => {
@@ -1475,14 +1477,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 initKasware();
             });
         } catch (error) {
-            console.error('Erreur lors de la vérification du compte KasWare', error);
+            console.error('Error while checking KasWare account', error);
             initKasware();
         }
     } else {
         initKasware();
     }
 
-    // Ajuster l'affichage de la légende lors du redimensionnement de la fenêtre
+    // Adjust the legend display when resizing the window
     window.addEventListener('resize', updateLegendDisplay);
 });
 
@@ -1491,7 +1493,7 @@ container.addEventListener('touchmove', handleTouchMove, { passive: false });
 container.addEventListener('touchend', handleTouchEnd, { passive: false });
 container.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
-// Empêcher le glissement des images
+// Prevent image dragging
 container.addEventListener('dragstart', (e) => {
     e.preventDefault();
 });
@@ -1515,7 +1517,7 @@ function checkMaintenanceStatus() {
                 console.log('Contenu du fichier:', text);
             }
         })
-        .catch(error => console.error('Erreur lors de la vérification du statut de maintenance:', error));
+        .catch(error => console.error('Error while checking maintenance status:', error));
 }
 
 /**
@@ -1555,7 +1557,7 @@ function checkCurrentEvents() {
             const eventName = document.getElementById('current-event-name');
 
             if (events.length > 0) {
-                const event = events[0]; // Prendre le premier événement s'il y en a plusieurs
+                const event = events[0]; // Take the first event if there are multiple
                 eventName.textContent = event.type;
                 indicator.style.display = 'flex';
                 showEventPopup(event);
@@ -1574,7 +1576,7 @@ let currentEventId = null;
  */
 function showEventPopup(event) {
     if (event.id === currentEventId) {
-        return; // Ne pas afficher le popup si l'événement est déjà affiché
+        return; // Don't display the popup if the event is already displayed
     }
 
     currentEventId = event.id;
@@ -1588,8 +1590,8 @@ function showEventPopup(event) {
     `;
     document.body.appendChild(popupContainer);
 
-    // Positionner la popup sous la barre KasWare
-    const kaswareBarHeight = 60; // Ajustez cette valeur si nécessaire
+    // Position the popup under the KasWare bar
+    const kaswareBarHeight = 60; // Adjust this value if necessary
     const topPosition = Math.max(kaswareBarHeight + 20, window.scrollY + kaswareBarHeight + 20);
     popupContainer.style.top = `${topPosition}px`;
 
@@ -1601,14 +1603,14 @@ function showEventPopup(event) {
 
     window.addEventListener('scroll', adjustPopupPosition);
 
-    // Nettoyer l'écouteur d'événements lorsque la popup est fermée
+    // Clean up the event listener when the popup is closed
     popupContainer.querySelector('button').addEventListener('click', function() {
         window.removeEventListener('scroll', adjustPopupPosition);
     });
 }
 
-// Vérifier les événements toutes les 5 minutes
+// Check events every 5 minutes
 setInterval(checkCurrentEvents, 5 * 60 * 1000);
 
-// Vérifier les événements au chargement de la page
+// Check events on page load
 document.addEventListener('DOMContentLoaded', checkCurrentEvents);
