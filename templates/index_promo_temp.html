@@ -245,12 +245,12 @@ For any commercial use or licensing inquiries, please contact: rymentz.studio@gm
 
     <main class="container">
         <div id="countdown">
-            <!-- 
+            <!-- counter -->
             <div id="countdown-title"></div>
             <div id="countdown-timer"></div>
-            -->
+
              <!-- Temporary message to be commented out when using the counter and uncomment lines above -->
-            <div id="temporary-message">Beta release scheduled for September 2024</div>
+            <!--<div id="temporary-message">Beta release scheduled for September 2024</div>-->
         </div>
 
         <div class="community-message">
@@ -564,7 +564,7 @@ function updateCountdown() {
     const language = document.getElementById("languageSelect").value;
     const t = translations[language];
 
-    const targetDate = new Date("2024-09-30T00:00:00").getTime();
+    const targetDate = new Date("2024-09-27T12:00:00").getTime();
     const now = new Date().getTime();
     const difference = targetDate - now;
 

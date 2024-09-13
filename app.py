@@ -1,6 +1,6 @@
 '''
 KasLand Application
-Version: v0.9.0.0
+Version: v0.9.0.1
 
 Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
 
@@ -229,7 +229,8 @@ def signal_handler(sig, frame):
     log_message("Shutting down the server...")
     
     # Stop the scheduler
-    scheduler.shutdown(wait=False)
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
     
     # Properly terminate database connections
     # (if you have a connection pool, for example)
