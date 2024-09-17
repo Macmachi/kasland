@@ -1,6 +1,6 @@
 '''
 KasLand Application
-Version: v0.9.0.2
+Version: v0.9.0.3
 
 Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
 
