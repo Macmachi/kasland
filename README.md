@@ -68,6 +68,23 @@ Variant levels: Mythic (≤0.1%), Legendary (0.1-1%), Epic (1-5%), Rare (5-10%),
 
 Experience the fusion of BlockDAG technology and strategic management in KasLand. Optimize your single plot, contribute to community energy production, and earn zkaspa in this exciting, transparent, and community-driven blockchain-based game!
 
+# Licensing and Copyright 📜
+
+## Game Assets
+All game assets (graphics, images, sound files, etc.) are the exclusive property of Rymentz and are protected by copyright. These assets may not be reproduced, distributed, or used outside of the game without explicit permission from Rymentz.
+
+## Game Code
+The game's source code, excluding the assets mentioned above, is licensed under the Creative Commons Attribution-NonCommercial 4.0 International Public License. This license allows you to:
+
+- Share: Copy and redistribute the code in any medium or format
+- Adapt: Remix, transform, and build upon the code
+
+Under the following terms:
+- Attribution: You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+- NonCommercial: You may not use the code for commercial purposes.
+
+For more details on the code license, please refer to the [Creative Commons CC BY-NC 4.0 license](https://creativecommons.org/licenses/by-nc/4.0/).
+
 # Documentation
 
 Coming soon...
