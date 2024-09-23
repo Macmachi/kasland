@@ -1,6 +1,6 @@
 '''
 KasLand Application
-Version: v0.9.1.0
+Version: v0.9.1.1
 
 Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
 
@@ -2010,17 +2010,20 @@ def distribute_zkaspa():
             # Distribute zkaspa to all parcels with a building
             cursor.execute(f'''
                 UPDATE parcels
-                SET zkaspa_balance = zkaspa_balance + 
+                SET zkaspa_balance = COALESCE(zkaspa_balance, 0) + 
                     CASE
-                        WHEN building_type LIKE 'wind_turbine%' THEN zkaspa_production * {WIND_TURBINE_BONUS} * ? * ?
-                        ELSE zkaspa_production * ? * ?
+                        WHEN building_type LIKE 'wind_turbine%' THEN COALESCE(zkaspa_production, 0) * {WIND_TURBINE_BONUS} * ? * ?
+                        ELSE COALESCE(zkaspa_production, 0) * ? * ?
                     END
                 WHERE building_type IS NOT NULL
             ''', (production['energy_multiplier'], production['zkaspa_multiplier'], 
                 production['energy_multiplier'], production['zkaspa_multiplier']))
 
-            if cursor.rowcount == 0:
-                raise Exception("No parcels updated during zkaspa distribution")
+            rows_updated = cursor.rowcount
+            if rows_updated == 0:
+                log_message("No parcels updated during zkaspa distribution. This might be normal if there are no eligible parcels.")
+            else:
+                log_message(f"zkaspa distribution completed. {rows_updated} parcels updated.")
 
             log_message(f"zkaspa distribution completed. Total distributed: {production['zkaspa_production']}")
 
@@ -2030,10 +2033,10 @@ def distribute_zkaspa():
                     building_type, 
                     COUNT(*) as count,
                     SUM(CASE
-                        WHEN building_type LIKE 'wind_turbine%' THEN zkaspa_production * {WIND_TURBINE_BONUS} * ? * ?
-                        ELSE zkaspa_production * ? * ?
+                        WHEN building_type LIKE 'wind_turbine%' THEN COALESCE(zkaspa_production, 0) * {WIND_TURBINE_BONUS} * ? * ?
+                        ELSE COALESCE(zkaspa_production, 0) * ? * ?
                     END) as total_production,
-                    SUM(zkaspa_balance) as total_balance
+                    SUM(COALESCE(zkaspa_balance, 0)) as total_balance
                 FROM parcels
                 WHERE building_type IS NOT NULL
                 GROUP BY building_type
