@@ -32,7 +32,7 @@ const infoDiv = document.getElementById('info');
 const tileWidth = 100;
 const tileHeight = 50;
 /*To be updated for the game launch!!!*/ 
-const KASPA_MAIN_ADDRESS = "kaspa:ppucusvk056l3emru250pqx7g9hdged42snr3cjxjnd44h2z6szvwcrrjv8hn";
+const KASPA_MAIN_ADDRESS = "kaspa:qry6aqhswjctzzg4td0z9lgky0lqhtme2yfxv3feevavmxajm5hl640jhaukp";
 const tileCache = {};
 let scale = 1;
 let totalParcels;
