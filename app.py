@@ -1,33 +1,40 @@
 '''
 KasLand Application
-Version: v0.9.1.2
+Version: v0.9.1.3
 
 Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
 
-This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 
-International License.
+Source Code License:
+The source code of this application is licensed under the Creative Commons 
+Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
 
 You are free to:
-- Share: copy and redistribute the material in any medium or format
-- Adapt: remix, transform, and build upon the material
+- Share: copy and redistribute the source code in any medium or format
+- Adapt: remix, transform, and build upon the source code
 
 Under the following terms:
 - Attribution: You must give appropriate credit, provide a link to the license, 
   and indicate if changes were made.
-- NonCommercial: You may not use the material for commercial purposes.
+- NonCommercial: You may not use the source code for commercial purposes.
 
 This is a human-readable summary of (and not a substitute for) the license. 
 For the full license text, please visit:
 https://creativecommons.org/licenses/by-nc/4.0/legalcode
 
-The KasLand application, including its source code and software components,
-is protected by copyright laws and international treaty provisions under the 
-terms of the CC BY-NC 4.0 license.
+Game Assets:
+All game assets (including but not limited to graphics, audio, and text content) 
+are not covered by the CC BY-NC 4.0 license and are subject to separate copyright. 
+These assets may not be used, reproduced, or distributed without explicit written 
+permission from Rymentz.
 
-Any use of this work outside the scope of this license, including any 
-commercial use, is prohibited without prior written permission.
+The KasLand application as a whole, including its source code, software components, 
+and assets, is protected by copyright laws and international treaty provisions.
 
-For commercial use or licensing inquiries, please contact: rymentz.studio@gmail.com
+Any use of this work outside the scope of these terms, including any commercial use, 
+is prohibited without prior written permission.
+
+For commercial use, licensing inquiries, or permission to use game assets, 
+please contact: rymentz.studio@gmail.com 
 '''
 
 # [IMPORTS]
@@ -63,7 +70,8 @@ import signal
 import sys
 # Transaction order management
 from operator import itemgetter
-
+# ThreadPoolExecutor to manage scheduler tasks
+from apscheduler.executors.pool import ThreadPoolExecutor
 # Import configuration
 from config import *
 
@@ -2537,21 +2545,31 @@ def determine_rarity(probability):
         return 'Basic'
 
 # Configure the scheduler
-scheduler = BackgroundScheduler()
+executors = {
+    'default': ThreadPoolExecutor(max_workers=10),
+    'critical': ThreadPoolExecutor(max_workers=5),
+    'minute_tasks': ThreadPoolExecutor(max_workers=2),
+}
+
+scheduler = BackgroundScheduler(executors=executors)
+
+# Critical tasks
 # 1. Check and collect fees
-scheduler.add_job(func=check_all_fees, trigger="cron", hour=0, minute=0)
+scheduler.add_job(func=check_all_fees, trigger="cron", hour=0, minute=0, executor='critical')
 # 2. Distribute zkaspa for the ending day
-scheduler.add_job(func=distribute_zkaspa, trigger="cron", hour=0, minute=1)
+scheduler.add_job(func=distribute_zkaspa, trigger="cron", hour=0, minute=1, executor='critical')
 # 3. Save statistics for the day that just ended, generate a new event, and predict zkaspa production
-scheduler.add_job(func=save_daily_stats, trigger="cron", hour=0, minute=2)
-# 4. Check for new transactions (continuous task)
-scheduler.add_job(func=check_new_transactions, trigger="interval", seconds=CHECK_INTERVAL)
-# 5. Check if parcels for sale have been purchased
-scheduler.add_job(func=check_monitored_wallets, trigger="interval", seconds=CHECK_INTERVAL)
-# 6. Log rotation (daily check, but effective rotation every 30 days)
-scheduler.add_job(func=rotate_logs, trigger="cron", hour=0, minute=30)
-# 7. Daily database backup
-scheduler.add_job(func=backup_database, trigger="cron", hour=1, minute=0)
+scheduler.add_job(func=save_daily_stats, trigger="cron", hour=0, minute=2, executor='critical')
+# 4. Log rotation (daily check, but effective rotation every 30 days)
+scheduler.add_job(func=rotate_logs, trigger="cron", hour=0, minute=30, executor='critical')
+# 5. Daily database backup
+scheduler.add_job(func=backup_database, trigger="cron", hour=1, minute=0, executor='critical')
+
+# Minute tasks
+# 1. Check for new transactions (continuous task)
+scheduler.add_job(func=check_new_transactions, trigger="interval", seconds=CHECK_INTERVAL, executor='minute_tasks')
+# 2. Check if parcels for sale have been purchased (continuous task)
+scheduler.add_job(func=check_monitored_wallets, trigger="interval", seconds=CHECK_INTERVAL, executor='minute_tasks')
 
 scheduler.start()
 
