@@ -1,6 +1,6 @@
 '''
 KasLand Application
-Version: v0.9.1.4
+Version: v0.9.1.5
 
 Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
 
@@ -1468,7 +1468,7 @@ Calculates the new total amount, determines the new building type, and updates t
 
 Raises an exception in case of error.
 """
-def upgrade_building(conn, address, amount, is_buy_parcel, manage_transaction=True):
+def upgrade_building(conn, address, amount, is_buy_parcel, current_variant=None, manage_transaction=True):
     log_message(f"upgrade_building function called for address {address} with amount {amount} KAS. First parcel: {is_buy_parcel}")
     cursor = None
     try:
@@ -1562,17 +1562,20 @@ def upgrade_building(conn, address, amount, is_buy_parcel, manage_transaction=Tr
         current_time = datetime.now().timestamp()
         new_next_fee_date = current_time + (new_fee_frequency * 24 * 60 * 60)
         
+        # Sélection de la nouvelle variante
         cursor.execute("SELECT variant, probability FROM building_variants WHERE building_type = ?", (new_type,))
         variants = cursor.fetchall()
         
-        if current_variant in [v['variant'] for v in variants]:
+        variant_names = [v['variant'] for v in variants]
+        probabilities = [v['probability'] for v in variants]
+        
+        if current_variant and current_variant in variant_names:
             new_variant = current_variant
-            log_message(f"Building type: {new_type}. Current variant '{current_variant}' kept.")
+            log_message(f"Building type: {new_type}. Variant '{new_variant}' retained from previous owner.")
         else:
-            variant_names = [v['variant'] for v in variants]
-            probabilities = [v['probability'] for v in variants]
+            # Sélectionner une nouvelle variante en fonction des probabilités
             new_variant = random.choices(variant_names, weights=probabilities, k=1)[0]
-            log_message(f"Building type: {new_type}. New variant '{new_variant}' selected (old variant: '{current_variant}').")
+            log_message(f"Building type: {new_type}. New variant '{new_variant}' selected.")
 
         if new_type != current_type:
             log_message(f"Building type change: {current_type} -> {new_type}")
@@ -2407,11 +2410,20 @@ def process_parcel_purchase(conn, cursor, buyer_address, new_parcel_id, wallet_m
         log_message(f"Purchase confirmed for parcel {new_parcel_id}. New owner: {buyer_address}. "
                     f"New zkaspa balance: {total_zkaspa_balance}. Purchase amount: {sale_price}")
 
+        # Récupère la variante actuelle du bâtiment de la parcelle vendue
+        cursor.execute("""
+            SELECT building_variant
+            FROM parcels
+            WHERE id = ?
+        """, (new_parcel_id,))
+        parcel_info = cursor.fetchone()
+        current_variant = parcel_info['building_variant']
+
         # Calculate the amount to pass to upgrade_building
         upgrade_amount = sale_price if is_first_parcel else previous_purchase_amount + sale_price
 
         # Update the building based on the parcel purchase amount
-        upgrade_result = upgrade_building(conn, buyer_address, upgrade_amount, is_buy_parcel=True, manage_transaction=False)
+        upgrade_result = upgrade_building(conn, buyer_address, upgrade_amount, is_buy_parcel=True, current_variant=current_variant, manage_transaction=False)
         if upgrade_result['success']:
             log_message(f"Building updated for parcel {new_parcel_id}: {upgrade_result['message']}")
         else:
