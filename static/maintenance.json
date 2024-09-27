@@ -1,4 +1,4 @@
 {
-    "maintenanceMode": false,
-    "message": "Maintenance is scheduled for this Wednesday xx.xx.2024 from 6 AM UTC+0 to 7 AM UTC+0. The service may be temporarily unavailable."
+    "maintenanceMode": true,
+    "message": "All plots have been sold. If you do not have a plot yet, please purchase them directly from the sellers. To do this, kindly transfer the exact amount indicated to the player's wallet address. Do not send money to the game's wallet to acquire a plot."
 }

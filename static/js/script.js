@@ -32,7 +32,13 @@ const infoDiv = document.getElementById('info');
 const tileWidth = 100;
 const tileHeight = 50;
 /*To be updated for the game launch!!!*/ 
-const KASPA_MAIN_ADDRESS = "kaspa:qry6aqhswjctzzg4td0z9lgky0lqhtme2yfxv3feevavmxajm5hl640jhaukp";
+/*const KASPA_MAIN_ADDRESS = "kaspa:qry6aqhswjctzzg4td0z9lgky0lqhtme2yfxv3feevavmxajm5hl640jhaukp";*/
+const KASPA_MAIN_ADDRESS = `
+If you don't have a plot yet, please note:<br>
+The plots are complete, so do NOT send any more money to the game's wallet!<br>
+If you want to buy a plot from a player, send exactly the sale price to the player's wallet, NOT to the game's address!
+`;
+
 const tileCache = {};
 let scale = 1;
 let totalParcels;
@@ -493,8 +499,8 @@ async function showParcelInfo(x, y) {
                 infoMessage += `
                     <br>
                     🏷️ <strong>FOR SALE</strong><br>
-                    💰 Prix de vente: ${parcel.sale_price?.toFixed(2) || 'N/A'} KAS<br>
-                    👤 Adresse du vendeur: <span id="owner-address">${parcel.owner_address}</span> <button id="copy-address">Copy</button>
+                    💰 Selling price : ${parcel.sale_price?.toFixed(2) || 'N/A'} KAS<br>
+                    👤 Seller's wallet address : <span id="owner-address">${parcel.owner_address}</span> <button id="copy-address">Copy</button>
                 `;
             }
         } else {
