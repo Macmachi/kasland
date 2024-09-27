@@ -651,13 +651,13 @@ body, html {
     opacity: 0.7;
 }
 
-.rarity-indicator.mythic { background-color: #ff00ff; }
-.rarity-indicator.legendary { background-color: #ffa500; }
-.rarity-indicator.epic { background-color: #a040a0; }
-.rarity-indicator.rare { background-color: #4040ff; }
-.rarity-indicator.uncommon { background-color: #40c040; }
-.rarity-indicator.common { background-color: #b0b0b0; }
-.rarity-indicator.basic { background-color: #d3d3d3; }
+.rarity-indicator.mythic { background-color: #9B59B6; }
+.rarity-indicator.legendary { background-color: #E67E22; }
+.rarity-indicator.epic { background-color: #3498DB; }
+.rarity-indicator.rare { background-color: #2ECC71; }
+.rarity-indicator.uncommon { background-color: #F1C40F; }
+.rarity-indicator.common { background-color: #ECF0F1; }
+.rarity-indicator.basic { background-color: #34495E; }
 
 /* Pour la gestion de la barre KasWare en haut de l'écran */
 .kasware-bar {

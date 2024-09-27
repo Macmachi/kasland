@@ -1,6 +1,6 @@
 '''
 KasLand Application
-Version: v0.9.1.3
+Version: v0.9.1.4
 
 Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
 
@@ -86,6 +86,7 @@ app = Flask(__name__)
 # CORS Configuration (APIs cannot be accessed from outside)
 CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}})
 
+'''
 # Limiter Configuration (To prevent API abuse)
 limiter = Limiter(
     app=app,
@@ -93,7 +94,7 @@ limiter = Limiter(
     default_limits=[RATE_LIMIT_DAY, RATE_LIMIT_HOUR],
     storage_uri=LIMITER_STORAGE_URI
 )
-
+'''
 # Generate a random secret key
 app.config['SECRET_KEY'] = SECRET_KEY
 
