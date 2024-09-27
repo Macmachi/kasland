@@ -5,7 +5,7 @@ KasLand is an innovative BlockDAG-based management game on the Kaspa network. Pl
 ## Core Mechanics 🎮
 
 ### Land and Buildings 🏞️🏘️
-- 46x46 grid of parcels, one parcel per player
+- 23x23 grid of parcels, one parcel per player
 - Building types: Small House, Wind Turbine ⚡ (more coming soon)
 - Building variants (A-H) with different rarity levels
 - Building characteristics: KAS cost, fees, energy and zkaspa production/consumption
