@@ -31,13 +31,8 @@ const fullscreenBtn = document.getElementById('fullscreen-btn');
 const infoDiv = document.getElementById('info');
 const tileWidth = 100;
 const tileHeight = 50;
-/*To be updated for the game launch!!!*/ 
-/*const KASPA_MAIN_ADDRESS = "kaspa:qry6aqhswjctzzg4td0z9lgky0lqhtme2yfxv3feevavmxajm5hl640jhaukp";*/
-const KASPA_MAIN_ADDRESS = `
-If you don't have a plot yet, please note:<br>
-The plots are complete, so do NOT send any more money to the game's wallet!<br>
-If you want to buy a plot from a player, send exactly the sale price to the player's wallet, NOT to the game's address!
-`;
+/*Game's wallet*/ 
+const KASPA_MAIN_ADDRESS = "kaspa:qry6aqhswjctzzg4td0z9lgky0lqhtme2yfxv3feevavmxajm5hl640jhaukp";
 
 const tileCache = {};
 let scale = 1;
@@ -1354,6 +1349,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     <h3>Buying a New Parcel</h3>
     <p>To buy a new parcel and add a building in KasLand, simply send KAS to the following address:</p>
+    <p style="color: red; font-weight: bold;">
+        If you don't have a plot yet, please read this carefully:<br>
+        The plots are complete for the beta, so do NOT send any more money to the game's wallet! (except if you want to upgrade, sell or cancel the sell of your plot) <br>
+        If you want to buy a plot from a player, send exactly the sale price to the player's wallet, NOT to the game's address!
+    </p>
+
     <div class="address-container">
         <input type="text" id="kaspa-address" value="${KASPA_MAIN_ADDRESS}" readonly>
         <button id="copy-address">Copy</button>
