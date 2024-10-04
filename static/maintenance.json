@@ -1,4 +1,4 @@
 {
-    "maintenanceMode": true,
-    "message": "All plots have been sold. If you do not have a plot yet, please purchase them directly from the sellers. To do this, kindly transfer the exact amount indicated to the player's wallet address. Do not send money to the game's wallet to acquire a plot."
+    "maintenanceMode": false,
+    "message": "Kasland is full, but 500 new plots will be added this Friday, October 4th, after the scheduled update at 9 PM Berlin time (UTC+2). Please avoid making transactions just before the Friday update. In the meantime, you can purchase plots for sale from other players (if available)."
 }

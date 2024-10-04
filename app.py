@@ -1,6 +1,6 @@
 '''
 KasLand Application
-Version: v0.9.1.7
+Version: v0.9.2.0
 
 Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
 
@@ -95,7 +95,7 @@ limiter = Limiter(
     storage_uri=LIMITER_STORAGE_URI
 )
 '''
-# Generate a random secret key
+# Session secret key
 app.config['SECRET_KEY'] = SECRET_KEY
 
 # Session type configuration
@@ -263,7 +263,7 @@ def get_db_connection():
     except sqlite3.Error as e:
         log_message(f"Error connecting to the database: {e}")
         return None
-    
+
 """
 Determines the building type and variant based on the sent amount.
 
@@ -1040,22 +1040,38 @@ def process_new_transaction(from_address, amount, tx_id, timestamp):
                         result = {"success": False, "message": "Failed to cancel the sale."}
                 else:
                     result = {"success": False, "message": "Unable to cancel sale: you don't have a parcel."}
+
             else:
-                # If it's not a special action, process as a normal transaction
-                if existing_parcel:
-                    # Check if the parcel is already for sale
-                    if existing_parcel['is_for_sale']:
-                        # Update the sale price
-                        if process_sale_listing(conn, cursor, from_address, tx_id):
-                            result = {"success": True, "message": f"Sale price successfully updated. New amount: {total_amount} KAS"}
-                        else:
-                            result = {"success": False, "message": "Failed to update sale price."}
+                # New code: Check if the amount corresponds to a sale listing with multiplier
+                multiplier = None
+                tolerance = 0.01  # Adjust the tolerance as needed
+                for key_amount in PRICE_MULTIPLIERS.keys():
+                    if abs(amount - key_amount) < tolerance:
+                        multiplier = PRICE_MULTIPLIERS[key_amount]
+                        break
+
+                if existing_parcel and multiplier:
+                    # Process as a sale listing with multiplier
+                    if process_sale_listing(conn, cursor, from_address, tx_id, multiplier=multiplier):
+                        result = {"success": True, "message": f"Parcel listed for sale with price multiplier {multiplier}."}
                     else:
-                        result = process_existing_parcel(conn, cursor, from_address, amount, existing_parcel, current_time, tx_id)
-                elif total_amount >= MINIMUM_PURCHASE_AMOUNT:
-                    result = process_new_parcel(conn, cursor, from_address, total_amount, current_time)
+                        result = {"success": False, "message": "Failed to list parcel for sale with multiplier."}
                 else:
-                    result = {"success": False, "message": f"Insufficient amount. Minimum required amount: {MINIMUM_PURCHASE_AMOUNT} KAS."}
+                    # If it's not a special action, process as a normal transaction
+                    if existing_parcel:
+                        # Check if the parcel is already for sale
+                        if existing_parcel['is_for_sale']:
+                            # Update the sale price
+                            if process_sale_listing(conn, cursor, from_address, tx_id):
+                                result = {"success": True, "message": f"Sale price successfully updated. New amount: {total_amount} KAS"}
+                            else:
+                                result = {"success": False, "message": "Failed to update sale price."}
+                        else:
+                            result = process_existing_parcel(conn, cursor, from_address, amount, existing_parcel, current_time, tx_id)
+                    elif total_amount >= MINIMUM_PURCHASE_AMOUNT:
+                        result = process_new_parcel(conn, cursor, from_address, total_amount, current_time)
+                    else:
+                        result = {"success": False, "message": f"Insufficient amount. Minimum required amount: {MINIMUM_PURCHASE_AMOUNT} KAS."}
 
             # Mark the transaction as processed
             cursor.execute("INSERT INTO processed_transactions (transaction_id, processed_at) VALUES (?, ?)", (tx_id, time.time()))
@@ -1783,58 +1799,117 @@ def generate_random_event():
     try:
         current_time = time.time()
         event_duration = 24 * 60 * 60  # 24 hours in seconds
-        
+
+        total_event_chance = 0.25  # 25% chance that an event will occur
+
         events = [
             {
                 "type": "solar_flare",
-                "description": "A solar flare has caused a blackout! Energy production is interrupted for 24 hours.",
-                "probability": 0.01,
+                "description": "A solar flare has caused a general blackout! Energy production is interrupted for 24 hours.",
+                "probability": 0.05, 
                 "energy_multiplier": 0.0,
                 "zkaspa_multiplier": 1
             },
             {
                 "type": "maintenance",
-                "description": "Network maintenance in progress. Energy production is reduced by 50% for 24 hours.",
-                "probability": 0.05,
-                "energy_multiplier": 0.5,
+                "description": "Electrical grid maintenance in progress. Energy production is reduced by 75% for 24 hours.",
+                "probability": 0.1, 
+                "energy_multiplier": 0.25,
                 "zkaspa_multiplier": 1
             },
             {
                 "type": "energy_surge",
-                "description": "Energy spike detected! Energy production is increased by 50% for 24 hours.",
-                "probability": 0.03,
-                "energy_multiplier": 1.5,
+                "description": "Power surge! Some lines are damaged. Energy production is reduced by 50% for 24 hours.",
+                "probability": 0.1,
+                "energy_multiplier": 0.5,
                 "zkaspa_multiplier": 1
+            },
+            {
+                "type": "windy_weather",
+                "description": "Strong winds boost wind turbine production! Energy production is increased by 25% for 24 hours.",
+                "probability": 0.1,
+                "energy_multiplier": 1.25,  
+                "zkaspa_multiplier": 1
+            },
+            {
+                "type": "power_failure",
+                "description": "A major power outage! Energy production drops by 80% for 24 hours.",
+                "probability": 0.1,
+                "energy_multiplier": 0.2,
+                "zkaspa_multiplier": 1
+            },
+            {
+                "type": "natural_disaster",
+                "description": "A natural disaster strikes! Energy and zkaspa production is reduced by 75% for 24 hours.",
+                "probability": 0.05,
+                "energy_multiplier": 0.25,
+                "zkaspa_multiplier": 0.25  
+            },
+            {
+                "type": "mining_difficulty_spike",
+                "description": "Sudden increase in mining difficulty! Zkaspa production decreases by 60% for 24 hours.",
+                "probability": 0.08,
+                "energy_multiplier": 1,
+                "zkaspa_multiplier": 0.4
+            },
+            {
+                "type": "technical_glitch",
+                "description": "A critical bug in mining software reduces zkaspa production by 50% for 24 hours.",
+                "probability": 0.08,
+                "energy_multiplier": 1,
+                "zkaspa_multiplier": 0.5
+            },
+            {
+                "type": "economic_crisis",
+                "description": "A severe economic crisis hits the crypto market! Zkaspa production falls by 70% for 24 hours.",
+                "probability": 0.05,
+                "energy_multiplier": 1,
+                "zkaspa_multiplier": 0.3
+            },
+            {
+                "type": "mining_hardware_shortage",
+                "description": "Global shortage of mining hardware components! Zkaspa production decreases by 45% for 24 hours.",
+                "probability": 0.06,
+                "energy_multiplier": 1,
+                "zkaspa_multiplier": 0.55
             }
         ]
-        
+
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('''
             SELECT * FROM events 
             WHERE end_time > ?
         ''', (current_time,))
-        
+
         existing_event = cursor.fetchone()
-        
+
         if existing_event:
             log_message("An event is already in progress. No new event generated.")
             return
-        
-        for event in events:
-            if random.random() < event['probability']:
-                cursor.execute('''
-                    INSERT INTO events (event_type, start_time, end_time, description, energy_multiplier, zkaspa_multiplier)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (event['type'], current_time, current_time + event_duration, event['description'], 
-                      event['energy_multiplier'], event['zkaspa_multiplier']))
-                
-                conn.commit()
-                log_message(f"New event generated: {event['type']}")
-                return
 
-        log_message("No new event generated today.")
+        # Calculate the total event probability (sum of weights)
+        total_event_weight = sum(event['probability'] for event in events)
+
+        # Determine if an event occurs
+        if random.random() < total_event_chance:
+            # Select an event based on relative weights
+            event_weights = [event['probability'] / total_event_weight for event in events]
+            selected_event = random.choices(events, weights=event_weights, k=1)[0]
+
+            # Insert the selected event into the database
+            cursor.execute('''
+                INSERT INTO events (event_type, start_time, end_time, description, energy_multiplier, zkaspa_multiplier)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (selected_event['type'], current_time, current_time + event_duration, selected_event['description'], 
+                  selected_event['energy_multiplier'], selected_event['zkaspa_multiplier']))
+            
+            conn.commit()
+            log_message(f"New event generated: {selected_event['type']}")
+            return
+        else:
+            log_message("No new event generated today.")
 
     except Exception as e:
         if conn:
@@ -1844,6 +1919,7 @@ def generate_random_event():
     finally:
         if conn:
             conn.close()
+            
 """
 get_current_event_effects(log_execution=True):
 Retrieves the effects of the current event in the game.
@@ -2202,7 +2278,7 @@ Parameters:
 Returns:
 - bool: True if the operation succeeds, False otherwise
 """
-def process_sale_listing(conn, cursor, from_address, tx_id):
+def process_sale_listing(conn, cursor, from_address, tx_id, multiplier=None):
     try:
         # Check if the parcel is already for sale
         cursor.execute("SELECT id, is_for_sale FROM parcels WHERE owner_address = ?", (from_address,))
@@ -2217,8 +2293,13 @@ def process_sale_listing(conn, cursor, from_address, tx_id):
             wallet = cursor.fetchone()
             
             if wallet:
-                # Use the total amount paid as the sale price and round it to one decimal place
-                sale_price = round(wallet['total_amount'], 1)
+
+                if multiplier:
+                    # Calculate sale price using the multiplier and round it
+                    sale_price = round(wallet['total_amount'] * multiplier, 1)  
+                else:
+                    # Use the total amount paid as the sale price and round it to one decimal place
+                    sale_price = round(wallet['total_amount'], 1)
                 
                 if is_already_for_sale:
                     # Update the sale price
@@ -2361,10 +2442,20 @@ def process_parcel_purchase(conn, cursor, buyer_address, new_parcel_id, wallet_m
         previous_purchase_amount = 0
         is_first_parcel = existing_parcel is None
 
-        if existing_parcel:
-            # The buyer already owns a parcel, we free it
+        # Retrieve the zkaspa balance of the parcel being sold
+        cursor.execute("SELECT zkaspa_balance FROM parcels WHERE id = ?", (new_parcel_id,))
+        sold_parcel = cursor.fetchone()
+        sold_parcel_zkaspa = sold_parcel['zkaspa_balance'] if sold_parcel else 0
+
+        if is_first_parcel:
+            # For first-time buyers, give them 50% of the sold parcel's zkaspa
+            zkaspa_to_transfer = sold_parcel_zkaspa * 0.5
+        else:
+            # For existing owners, transfer their current zkaspa balance
             zkaspa_to_transfer = existing_parcel['zkaspa_balance']
             previous_purchase_amount = existing_parcel['purchase_amount']
+            
+            # Free the existing parcel
             cursor.execute("""
                 UPDATE parcels
                 SET owner_address = NULL, building_type = NULL, building_variant = NULL,
@@ -2621,7 +2712,7 @@ def api_kasland_status():
     is_full = is_kasland_full()
     return jsonify({
         "is_full": is_full,
-        "message": "KasLand is full. Please try again later." if is_full else "Plots are available."
+        "message": "All plots have been sold. If you do not have a plot yet, please purchase them directly from the sellers. To do this, kindly transfer the exact amount indicated to the player's wallet address. Do not send money to the game's wallet to acquire a plot." if is_full else "Plots are available."
     })
 
 # API: Retrieves all information about plots and map size

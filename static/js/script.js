@@ -415,10 +415,13 @@ function addTreesBorder(mapSize) {
     const isMobileDevice = typeof isMobile === 'function' && isMobile();
     const borderWidth = isMobileDevice ? 20 : 20; // Reduce the border width on mobile
     const treeDensity = isMobileDevice ? 0.005 : 0.07; // Reduce the density on mobile
+    const extraMargin = 1; // Marge supplémentaire pour éviter la superposition avec la carte
 
     for (let i = -borderWidth; i < mapSize + borderWidth; i++) {
         for (let j = -borderWidth; j < mapSize + borderWidth; j++) {
-            if (i >= 0 && i < mapSize && j >= 0 && j < mapSize) continue; // Ignore the inside of the map
+            // Ignore l'intérieur de la carte et ajoute une marge supplémentaire
+            if (i >= -extraMargin && i < mapSize + extraMargin && 
+                j >= -extraMargin && j < mapSize + extraMargin) continue;
 
             if (Math.random() < treeDensity) {
                 const tree = document.createElement('div');
@@ -579,7 +582,7 @@ function closeParcelInfo(event) {
 }
 
 /**
- * Generates the map grid with all parcels.
+ * Generates the map grid with all parcels and a blue lake rectangle with adjustable coordinates.
  */
 async function generateGrid() {
     try {
@@ -587,6 +590,21 @@ async function generateGrid() {
         
         mapSize = localData.mapSize;
         const parcels = Object.values(localData.parcels);
+
+        // Constantes pour définir la position et la taille du lac
+        const LAKE_START_X = -10;  // Coordonnée X de début du lac
+        const LAKE_END_X = 20;  // Coordonnée X de fin du lac
+        const LAKE_START_Y = 15.5;  // Coordonnée Y de début du lac
+        const LAKE_END_Y = 42;  // Coordonnée Y de fin du lac
+
+        // Créer le rectangle bleu uniforme pour le lac
+        const lakeBackground = document.createElement('div');
+        lakeBackground.className = 'lake-background';
+        lakeBackground.style.width = `${(LAKE_END_X - LAKE_START_X) * tileWidth}px`;
+        lakeBackground.style.height = `${(LAKE_END_Y - LAKE_START_Y) * tileHeight}px`;
+        lakeBackground.style.left = `${LAKE_START_X * tileWidth}px`;
+        lakeBackground.style.top = `${LAKE_START_Y * tileHeight}px`;
+        tilesContainer.appendChild(lakeBackground);
 
         // Filter valid parcels and ignore those without ID or out of bounds
         const validParcels = parcels.filter(parcel => {
@@ -743,21 +761,26 @@ function zoom(delta, centerX, centerY) {
 async function checkKasLandStatus() {
     try {
         const status = await apiCall('kasland_status', 'GET');
+        const statusElement = document.getElementById('kasland-full-status');
+        const kaslandFullTextElement = document.getElementById('kaslandfulltext');
+        
         if (status.is_full) {
-            // Display a message on the user interface
-            const statusMessage = document.createElement('div');
-            statusMessage.id = 'kasland-status';
-            statusMessage.textContent = status.message;
-            statusMessage.style.color = 'red';
-            statusMessage.style.fontWeight = 'bold';
-            document.body.prepend(statusMessage);
-        } else {
-            // Remove the message if it exists
-            const existingMessage = document.getElementById('kasland-status');
-            if (existingMessage) {
-                existingMessage.remove();
+            statusElement.textContent = status.message;
+            statusElement.style.display = 'block';
+
+            // Afficher également l'élément kaslandfulltext
+            if (kaslandFullTextElement) {
+                kaslandFullTextElement.style.display = 'block';
             }
+        } else {
+            statusElement.style.display = 'none';
+            // Cacher également l'élément kaslandfulltext
+            if (kaslandFullTextElement) {
+                kaslandFullTextElement.style.display = 'none';
+            }
+
         }
+        
         // Update the status in local data
         localData.kaslandStatus = status;
     } catch (error) {
@@ -1009,8 +1032,8 @@ setInterval(updateLocalData, 180000);
 // Initialization
 updateGrid();
 
-// Check KasLand status every 60 seconds
-setInterval(checkKasLandStatus, 60000);
+// Check KasLand status every 30 seconds
+setInterval(checkKasLandStatus, 30000);
 
 // Event Listeners
 window.addEventListener('resize', () => {
@@ -1331,6 +1354,8 @@ document.addEventListener('DOMContentLoaded', function() {
      * Displays information about the KasLand main wallet.
      */
     function showShopInfo() {
+        //Permet de vérifier si kasland est complet et si oui on affiche texte.
+        checkKasLandStatus()
         const shopInfoContainer = document.getElementById('shop-info-container');
         shopInfoContainer.innerHTML = `
     <h2>KasLand Buy / Sell Parcel Information</h2>
@@ -1346,13 +1371,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <p>Using a wallet that changes address after transactions may result in loss of funds or parcels. These losses cannot and will not be refunded or recovered.</p>
         <p>KasLand is not responsible for any losses incurred due to the use of incompatible wallets. Always ensure you're using a wallet with a consistent address before engaging in any transactions.</p>
     </div>
-
     <h3>Buying a New Parcel</h3>
-    <p>To buy a new parcel and add a building in KasLand, simply send KAS to the following address:</p>
-    <p style="color: red; font-weight: bold;">
+    <p>To buy a new parcel and add a building in KasLand, simply send KAS to the following address (the minimum acquisition amount is 5 KAS.) :</p>
+    
+    <p id="kaslandfulltext" style="color: red; font-weight: bold; display: none;">
         If you don't have a plot yet, please read this carefully:<br>
         The plots are complete for the beta, so do NOT send any more money to the game's wallet! (except if you want to upgrade, sell or cancel the sell of your plot) <br>
-        If you want to buy a plot from a player, send exactly the sale price to the player's wallet, NOT to the game's address!
+        If you want to buy a plot from a player, send exactly the sale price to the player's wallet (only if his plot is on sale), NOT to the game's address!
     </p>
 
     <div class="address-container">
@@ -1362,11 +1387,21 @@ document.addEventListener('DOMContentLoaded', function() {
     <p>The amount you send determines the type of building you'll get. Check the Legend for tier information.</p>
 
     <h3>Selling Your Parcel</h3>
-    <p>To put your parcel up for sale:</p>
-    <ol>
-        <li>Send exactly 0.2 KAS to the KasLand address above.</li>
-        <li>Your parcel will be listed for sale at the total amount you've invested in it.</li>
-    </ol>
+    <p>To put your parcel up for sale or adjust its price, send one of the following amounts to the KasLand address above:</p>
+    <ul>
+        <li><strong>0.2 KAS:</strong> List your parcel at 100% (x1) of your total investment</li>
+        <li><strong>4.1 KAS:</strong> List your parcel at 150% (x1.5) of your total investment</li>
+        <li><strong>4.2 KAS:</strong> List your parcel at 200% (x2) of your total investment</li>
+        <li><strong>4.3 KAS:</strong> List your parcel at 250% (x2.5) of your total investment</li>
+        <li><strong>4.4 KAS:</strong> List your parcel at 300% (x3) of your total investment</li>
+        <li><strong>4.5 KAS:</strong> List your parcel at 350% (x3.5) of your total investment</li>
+        <li><strong>4.6 KAS:</strong> List your parcel at 400% (x4) of your total investment</li>
+        <li><strong>4.7 KAS:</strong> List your parcel at 450% (x4.5) of your total investment</li>
+        <li><strong>4.8 KAS:</strong> List your parcel at 500% (x5) of your total investment</li>
+        <li><strong>4.9 KAS:</strong> List your parcel at 550% (x5.5) of your total investment</li>
+    </ul>
+    <p><strong>Note:</strong> The sale price is calculated based on the total amount you've invested in your parcel. Sending any of these amounts will both list your parcel for sale and set its price accordingly.</p>
+    <p>To cancel the sale of your parcel, send exactly 0.3 KAS to the KasLand address.</p>
 
     <h3>Cancelling a Sale</h3>
     <p>To cancel the sale of your parcel:</p>
