@@ -1,6 +1,6 @@
 '''
 KasLand Application
-Version: v0.9.2.0
+Version: v0.9.2.1
 
 Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
 
@@ -2434,7 +2434,7 @@ Raises an exception in case of error.
 """
 def process_parcel_purchase(conn, cursor, buyer_address, new_parcel_id, wallet_monitor_id, transaction_amount):
     try:
-        # Check if the buyer already owns a parcel
+        # Vérifier si l'acheteur possède déjà une parcelle
         cursor.execute("SELECT id, zkaspa_balance, purchase_amount FROM parcels WHERE owner_address = ?", (buyer_address,))
         existing_parcel = cursor.fetchone()
 
@@ -2442,20 +2442,21 @@ def process_parcel_purchase(conn, cursor, buyer_address, new_parcel_id, wallet_m
         previous_purchase_amount = 0
         is_first_parcel = existing_parcel is None
 
-        # Retrieve the zkaspa balance of the parcel being sold
-        cursor.execute("SELECT zkaspa_balance FROM parcels WHERE id = ?", (new_parcel_id,))
+        # Récupérer le solde zkaspa de la parcelle vendue et l'adresse du vendeur
+        cursor.execute("SELECT owner_address, zkaspa_balance FROM parcels WHERE id = ?", (new_parcel_id,))
         sold_parcel = cursor.fetchone()
         sold_parcel_zkaspa = sold_parcel['zkaspa_balance'] if sold_parcel else 0
+        seller_address = sold_parcel['owner_address'] if sold_parcel else None  # Adresse du vendeur
 
         if is_first_parcel:
-            # For first-time buyers, give them 50% of the sold parcel's zkaspa
+            # Pour les nouveaux joueurs, leur donner 50% du zkaspa de la parcelle vendue
             zkaspa_to_transfer = sold_parcel_zkaspa * 0.5
         else:
-            # For existing owners, transfer their current zkaspa balance
+            # Pour les joueurs existants, transférer leur solde zkaspa actuel
             zkaspa_to_transfer = existing_parcel['zkaspa_balance']
             previous_purchase_amount = existing_parcel['purchase_amount']
-            
-            # Free the existing parcel
+                
+            # Libérer la parcelle existante
             cursor.execute("""
                 UPDATE parcels
                 SET owner_address = NULL, building_type = NULL, building_variant = NULL,
@@ -2468,13 +2469,13 @@ def process_parcel_purchase(conn, cursor, buyer_address, new_parcel_id, wallet_m
             """, (existing_parcel['id'],))
             log_message(f"Parcel {existing_parcel['id']} of {buyer_address} has been freed. zkaspa_balance to transfer: {zkaspa_to_transfer}")
 
-        # Use the transaction amount as the purchase price
+        # Utiliser le montant de la transaction comme prix d'achat
         sale_price = transaction_amount
 
-        # Calculate the new total zkaspa balance
+        # Calculer le nouveau solde total de zkaspa
         total_zkaspa_balance = zkaspa_to_transfer
 
-        # Update the buyer's wallet with the new total amount
+        # Mettre à jour le portefeuille de l'acheteur avec le nouveau montant total
         cursor.execute("""
             INSERT OR REPLACE INTO wallets (address, total_amount, transaction_count)
             VALUES (?, ?, COALESCE((SELECT transaction_count FROM wallets WHERE address = ?), 0) + 1)
@@ -2483,7 +2484,7 @@ def process_parcel_purchase(conn, cursor, buyer_address, new_parcel_id, wallet_m
             transaction_count = transaction_count + 1
         """, (buyer_address, sale_price, buyer_address, sale_price))
 
-        # Assign the new parcel to the buyer and update the information
+        # Assigner la nouvelle parcelle à l'acheteur et mettre à jour les informations
         cursor.execute("""
             UPDATE parcels 
             SET owner_address = ?, is_for_sale = 0, sale_price = NULL,
@@ -2491,7 +2492,7 @@ def process_parcel_purchase(conn, cursor, buyer_address, new_parcel_id, wallet_m
             WHERE id = ?
         """, (buyer_address, total_zkaspa_balance, sale_price, time.time(), new_parcel_id))
 
-        # Update the status in wallets_to_monitor
+        # Mettre à jour le statut dans wallets_to_monitor
         cursor.execute("""
             UPDATE wallets_to_monitor
             SET status = 'completed'
@@ -2501,7 +2502,16 @@ def process_parcel_purchase(conn, cursor, buyer_address, new_parcel_id, wallet_m
         log_message(f"Purchase confirmed for parcel {new_parcel_id}. New owner: {buyer_address}. "
                     f"New zkaspa balance: {total_zkaspa_balance}. Purchase amount: {sale_price}")
 
-        # Récupère la variante actuelle du bâtiment de la parcelle vendue
+        # Réinitialiser le total_amount du vendeur
+        if seller_address:
+            cursor.execute("""
+                UPDATE wallets
+                SET total_amount = 0
+                WHERE address = ?
+            """, (seller_address,))
+            log_message(f"Le total_amount du vendeur {seller_address} a été réinitialisé suite à la vente de la parcelle {new_parcel_id}.")
+
+        # Récupérer la variante actuelle du bâtiment de la parcelle vendue
         cursor.execute("""
             SELECT building_variant
             FROM parcels
@@ -2510,10 +2520,10 @@ def process_parcel_purchase(conn, cursor, buyer_address, new_parcel_id, wallet_m
         parcel_info = cursor.fetchone()
         current_variant = parcel_info['building_variant']
 
-        # Calculate the amount to pass to upgrade_building
+        # Calculer le montant à passer à upgrade_building
         upgrade_amount = sale_price if is_first_parcel else previous_purchase_amount + sale_price
 
-        # Update the building based on the parcel purchase amount
+        # Mettre à jour le bâtiment en fonction du montant d'achat de la parcelle
         upgrade_result = upgrade_building(conn, buyer_address, upgrade_amount, is_buy_parcel=True, current_variant=current_variant, manage_transaction=False)
         if upgrade_result['success']:
             log_message(f"Building updated for parcel {new_parcel_id}: {upgrade_result['message']}")
