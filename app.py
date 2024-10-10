@@ -1,6 +1,6 @@
 '''
 KasLand Application
-Version: v0.9.2.1
+Version: v0.9.3.0
 
 Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
 
@@ -341,8 +341,9 @@ def determine_building_type(amount, current_variant=None, building_types=None):
                     # If building is a tuple (default case)
                     name, min_amount, _, max_count = building
                     variants = None
-                
-                if amount >= min_amount:
+
+                # sélection du type de bâtiment pour inclure la tolérance de slippage
+                if amount >= min_amount - SLIPPAGE_TOLERANCE:
                     # Check if the maximum number of this building type has been reached
                     if max_count is not None:
                         cursor.execute('''
@@ -1068,10 +1069,10 @@ def process_new_transaction(from_address, amount, tx_id, timestamp):
                                 result = {"success": False, "message": "Failed to update sale price."}
                         else:
                             result = process_existing_parcel(conn, cursor, from_address, amount, existing_parcel, current_time, tx_id)
-                    elif total_amount >= MINIMUM_PURCHASE_AMOUNT:
+                    elif total_amount >= (MINIMUM_PURCHASE_AMOUNT - SLIPPAGE_TOLERANCE):
                         result = process_new_parcel(conn, cursor, from_address, total_amount, current_time)
                     else:
-                        result = {"success": False, "message": f"Insufficient amount. Minimum required amount: {MINIMUM_PURCHASE_AMOUNT} KAS."}
+                        result = {"success": False, "message": f"Montant insuffisant. Le montant minimum requis est de {MINIMUM_PURCHASE_AMOUNT} KAS."}
 
             # Mark the transaction as processed
             cursor.execute("INSERT INTO processed_transactions (transaction_id, processed_at) VALUES (?, ?)", (tx_id, time.time()))
@@ -1800,7 +1801,7 @@ def generate_random_event():
         current_time = time.time()
         event_duration = 24 * 60 * 60  # 24 hours in seconds
 
-        total_event_chance = 0.25  # 25% chance that an event will occur
+        total_event_chance = 0.33  # 33% chance that an event will occur
 
         events = [
             {
@@ -1975,17 +1976,19 @@ def get_current_event_effects(log_execution=True):
             conn.close()
 
 """
-Calculates the predicted zkaspa and energy production.
+Calculates total zkaspa and energy production for all parcels.
+
+Considers current event effects, building rarity, and special bonuses (e.g., wind turbines).
+Sets zkaspa production to zero if energy production is insufficient.
 
 Parameters:
-- conn: Database connection (optional)
-- cursor: Database cursor (optional)
-- log_execution (bool): Activates logging if True
+- conn (sqlite3.Connection, optional): Database connection
+- cursor (sqlite3.Cursor, optional): Database cursor
+- log_execution (bool): If True, logs detailed execution information
 
 Returns:
-- dict: Production details
-
-Takes into account random events and bonuses specific to certain building types (like the bonus for wind turbines).
+- dict: Contains total energy production/consumption, zkaspa production, 
+        current event type and multipliers. Returns default values if an error occurs.
 """
 def calculate_production(conn=None, cursor=None, log_execution=True):
     if log_execution:
@@ -1995,50 +1998,56 @@ def calculate_production(conn=None, cursor=None, log_execution=True):
         energy_multiplier = event_effects['energy_multiplier']
         zkaspa_multiplier = event_effects['zkaspa_multiplier']
 
-        # Retrieve details for each building type
-        cursor.execute(f'''
-            SELECT 
-                building_type,
-                COUNT(*) as count,
-                SUM(CASE WHEN energy_production IS NOT NULL THEN energy_production ELSE 0 END) as energy_production,
-                SUM(CASE WHEN energy_consumption IS NOT NULL THEN energy_consumption ELSE 0 END) as energy_consumption,
-                SUM(CASE 
-                    WHEN building_type LIKE 'wind_turbine%' THEN zkaspa_production * {WIND_TURBINE_BONUS}
-                    WHEN zkaspa_production IS NOT NULL THEN zkaspa_production 
-                    ELSE 0 
-                END) as zkaspa_production
-            FROM parcels
-            WHERE building_type IS NOT NULL
-            GROUP BY building_type
+        # Récupérer toutes les parcelles avec leurs variantes et probabilités
+        cursor.execute('''
+            SELECT p.id, p.building_type, p.building_variant,
+                   p.energy_production, p.energy_consumption, p.zkaspa_production,
+                   bv.probability
+            FROM parcels p
+            JOIN building_variants bv
+                ON p.building_type = bv.building_type AND p.building_variant = bv.variant
+            WHERE p.building_type IS NOT NULL
         ''')
 
-        building_details = cursor.fetchall()
+        parcels = cursor.fetchall()
 
-        total_energy_production = 0
-        total_energy_consumption = 0
-        total_zkaspa_production = 0
-        if log_execution:
-            log_message("Production details by building type:")
-        for building in building_details:
-            b_type = building['building_type']
-            count = building['count']
-            energy_prod = building['energy_production']
-            energy_cons = building['energy_consumption']
-            zkaspa_prod = building['zkaspa_production']
+        total_energy_production = 0.0
+        total_energy_consumption = 0.0
+        total_zkaspa_production = 0.0
 
-            adjusted_energy_prod = energy_prod * energy_multiplier
-            adjusted_zkaspa_prod = zkaspa_prod * energy_multiplier * zkaspa_multiplier
+        for parcel in parcels:
+            building_type = parcel['building_type']
+            energy_production = parcel['energy_production'] or 0.0
+            energy_consumption = parcel['energy_consumption'] or 0.0
+            zkaspa_production = parcel['zkaspa_production'] or 0.0
+            probability = parcel['probability']
 
-            total_energy_production += adjusted_energy_prod
-            total_energy_consumption += energy_cons
-            total_zkaspa_production += adjusted_zkaspa_prod
+            # Déterminer la rareté et le multiplicateur
+            rarity, rarity_multiplier = determine_rarity_and_multiplier(probability)
+
+            # Ajuster la production d'énergie
+            adjusted_energy_production = energy_production * energy_multiplier
+
+            # Ajuster la production de zkaspa
+            adjusted_zkaspa_production = zkaspa_production * energy_multiplier * zkaspa_multiplier * rarity_multiplier
+
+            # Bonus spécial pour les éoliennes
+            if building_type.startswith('wind_turbine'):
+                adjusted_zkaspa_production *= WIND_TURBINE_BONUS
+
+            total_energy_production += adjusted_energy_production
+            total_energy_consumption += energy_consumption
+            total_zkaspa_production += adjusted_zkaspa_production
+
             if log_execution:
-                log_message(f"  {b_type} (x{count}): Energy prod: {adjusted_energy_prod:.2f}, "
-                            f"Energy cons: {energy_cons:.2f}, zkaspa prod: {adjusted_zkaspa_prod:.2f}")
+                log_message(f"Parcel ID {parcel['id']}: Type {building_type}, Rarity {rarity}, "
+                            f"Energy prod: {adjusted_energy_production:.2f}, "
+                            f"Energy cons: {energy_consumption:.2f}, "
+                            f"zkaspa prod: {adjusted_zkaspa_production:.2f}")
 
-        # Check if there's an energy deficit and adjust zkaspa production accordingly
+        # Vérifier s'il y a un déficit énergétique et ajuster la production de zkaspa en conséquence
         if total_energy_production < total_energy_consumption:
-            total_zkaspa_production = 0
+            total_zkaspa_production = 0.0
             if log_execution:
                 log_message("Energy deficit detected. zkaspa production set to zero.")
 
@@ -2060,17 +2069,28 @@ def calculate_production(conn=None, cursor=None, log_execution=True):
     except Exception as e:
         log_message(f"Error during production calculation: {e}")
         return {
-            "energy_production": 0,
-            "energy_consumption": 0,
-            "zkaspa_production": 0,
+            "energy_production": 0.0,
+            "energy_consumption": 0.0,
+            "zkaspa_production": 0.0,
             "event_type": None,
             "energy_multiplier": 1.0,
             "zkaspa_multiplier": 1.0
         }
 
 """
-distribute_zkaspa():
-Distributes zkaspa daily to plots based on their production.
+Distributes zkaspa daily to plots based on their production and various factors.
+
+This function:
+1. Calculates the total energy production and consumption.
+2. If production meets or exceeds consumption:
+   - Retrieves all parcels with their building types and variants.
+   - Calculates adjusted zkaspa production for each parcel based on:
+     * Base zkaspa production
+     * Current event's energy and zkaspa multipliers
+     * Building variant rarity multiplier
+     * Special bonus for wind turbines
+   - Updates zkaspa balance for each parcel.
+3. Logs the distribution process and results.
 
 Returns:
 - tuple: Distribution statistics or None in case of error
@@ -2083,7 +2103,7 @@ def distribute_zkaspa():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Start of transaction
+        # Démarrer une transaction
         conn.execute("BEGIN TRANSACTION")
 
         current_time = time.time()
@@ -2095,77 +2115,68 @@ def distribute_zkaspa():
         log_message(f"Total production: {production['energy_production']}, Consumption: {production['energy_consumption']}")
 
         if production['energy_production'] >= production['energy_consumption']:
-            # Distribute zkaspa to all parcels with a building
-            cursor.execute(f'''
+            # Récupérer toutes les parcelles avec leurs variantes et probabilités
+            cursor.execute('''
+                SELECT p.id, p.zkaspa_balance, p.zkaspa_production, p.building_type, p.building_variant,
+                       bv.probability
+                FROM parcels p
+                JOIN building_variants bv
+                    ON p.building_type = bv.building_type AND p.building_variant = bv.variant
+                WHERE p.building_type IS NOT NULL
+            ''')
+
+            parcels = cursor.fetchall()
+
+            total_zkaspa_distributed = 0.0
+            parcels_update_data = []
+
+            for parcel in parcels:
+                zkaspa_balance = parcel['zkaspa_balance'] or 0.0
+                zkaspa_production = parcel['zkaspa_production'] or 0.0
+                probability = parcel['probability']
+
+                # Déterminer la rareté et le multiplicateur
+                rarity, rarity_multiplier = determine_rarity_and_multiplier(probability)
+
+                # Calculer la production ajustée de zkaspa
+                adjusted_zkaspa_production = zkaspa_production * production['energy_multiplier'] * production['zkaspa_multiplier'] * rarity_multiplier
+
+                # Bonus spécial pour les éoliennes
+                if parcel['building_type'].startswith('wind_turbine'):
+                    adjusted_zkaspa_production *= WIND_TURBINE_BONUS
+
+                # Mettre à jour le solde zkaspa de la parcelle
+                new_zkaspa_balance = zkaspa_balance + adjusted_zkaspa_production
+
+                total_zkaspa_distributed += adjusted_zkaspa_production
+
+                parcels_update_data.append((new_zkaspa_balance, parcel['id']))
+
+            # Mettre à jour les parcelles en une seule opération
+            cursor.executemany('''
                 UPDATE parcels
-                SET zkaspa_balance = COALESCE(zkaspa_balance, 0) + 
-                    CASE
-                        WHEN building_type LIKE 'wind_turbine%' THEN COALESCE(zkaspa_production, 0) * {WIND_TURBINE_BONUS} * ? * ?
-                        ELSE COALESCE(zkaspa_production, 0) * ? * ?
-                    END
-                WHERE building_type IS NOT NULL
-            ''', (production['energy_multiplier'], production['zkaspa_multiplier'], 
-                production['energy_multiplier'], production['zkaspa_multiplier']))
+                SET zkaspa_balance = ?
+                WHERE id = ?
+            ''', parcels_update_data)
 
-            rows_updated = cursor.rowcount
-            if rows_updated == 0:
-                log_message("No parcels updated during zkaspa distribution. This might be normal if there are no eligible parcels.")
-            else:
-                log_message(f"zkaspa distribution completed. {rows_updated} parcels updated.")
-
-            log_message(f"zkaspa distribution completed. Total distributed: {production['zkaspa_production']}")
-
-            # Consolidated statistics by building type
-            cursor.execute(f'''
-                SELECT 
-                    building_type, 
-                    COUNT(*) as count,
-                    SUM(CASE
-                        WHEN building_type LIKE 'wind_turbine%' THEN COALESCE(zkaspa_production, 0) * {WIND_TURBINE_BONUS} * ? * ?
-                        ELSE COALESCE(zkaspa_production, 0) * ? * ?
-                    END) as total_production,
-                    SUM(COALESCE(zkaspa_balance, 0)) as total_balance
-                FROM parcels
-                WHERE building_type IS NOT NULL
-                GROUP BY building_type
-            ''', (production['energy_multiplier'], production['zkaspa_multiplier'], 
-                production['energy_multiplier'], production['zkaspa_multiplier']))
-            
-            building_stats = cursor.fetchall()
-            total_zkaspa = 0
-            
-            for stat in building_stats:
-                log_message(f"Building type: {stat['building_type']}, Count: {stat['count']}, "
-                            f"Total zkaspa production: {stat['total_production']}, "
-                            f"Total zkaspa balance: {stat['total_balance']}")
-                total_zkaspa += stat['total_balance']
-
-            log_message(f"Total zkaspa after distribution: {total_zkaspa}")
+            conn.commit()
+            log_message(f"zkaspa distribution completed. {len(parcels_update_data)} parcels updated. Total zkaspa distributed: {total_zkaspa_distributed}")
 
         else:
             log_message(f"Not enough energy produced. Production: {production['energy_production']}, Consumption: {production['energy_consumption']}. No zkaspa distributed today.")
-            total_zkaspa = 0  # No distribution, so total remains unchanged
 
-        # Calculate predicted zkaspa production
-        predicted_zkaspa_production = calculate_predicted_zkaspa_production()
-
-        conn.commit()
-        log_message("zkaspa distribution completed successfully.")
-
-        # Return values for statistics saving
-        return current_date, production['energy_production'], production['energy_consumption'], total_zkaspa, predicted_zkaspa_production
+            # Même si aucune zkaspa n'a été distribuée, il est important de confirmer la transaction
+            conn.commit()
 
     except sqlite3.Error as e:
         log_message(f"SQLite error during zkaspa distribution: {e}")
         if conn:
             conn.rollback()
-        return None
 
     except Exception as e:
         log_message(f"Unexpected error during zkaspa distribution: {e}")
         if conn:
             conn.rollback()
-        return None
 
     finally:
         if cursor:
@@ -2568,8 +2579,9 @@ def check_and_find_transaction(address, amount, max_retries=5, retry_delay=10):
                     break  # Exit the loop if the transaction is too old
 
                 for output in tx['outputs']:
-                    if output['script_public_key_address'] == address and output['amount'] == amount_somtoshis:
-                        # Transaction found, look for the sender
+                    slippage_somtoshis = int(round(SLIPPAGE_TOLERANCE * 100000000))
+                    if output['script_public_key_address'] == address and abs(output['amount'] - amount_somtoshis) <= slippage_somtoshis:
+                        # Transaction correspondante trouvée avec tolérance de slippage
                         if tx['inputs'] and 'previous_outpoint_address' in tx['inputs'][0]:
                             log_message(f"Transaction found for {address} with amount {amount} KAS")
                             return True, tx['inputs'][0]['previous_outpoint_address'], None
@@ -2634,30 +2646,32 @@ def check_monitored_wallets():
             conn.close()
 
 """
-Determines the rarity of a building variant based on its probability for front display.
+Determines the rarity and corresponding multiplier of a building variant based on its probability.
 
 Parameters:
 - probability (float): Variant probability
 
 Returns:
-- str: Rarity level
+- tuple: A tuple containing two elements:
+    - str: Rarity level ('Mythic', 'Legendary', 'Epic', 'Rare', 'Uncommon', 'Common', or 'Basic')
+    - float: Corresponding rarity multiplier from the RARITY_MULTIPLIERS dictionary
 """
-def determine_rarity(probability):
+def determine_rarity_and_multiplier(probability):
     if probability <= 0.001:  # ≤0.1%
-        return 'Mythic'
+        return 'Mythic', RARITY_MULTIPLIERS['Mythic']
     elif probability <= 0.01:  # 0.1-1%
-        return 'Legendary'
+        return 'Legendary', RARITY_MULTIPLIERS['Legendary']
     elif probability <= 0.05:  # 1-5%
-        return 'Epic'
+        return 'Epic', RARITY_MULTIPLIERS['Epic']
     elif probability <= 0.1:   # 5-10%
-        return 'Rare'
+        return 'Rare', RARITY_MULTIPLIERS['Rare']
     elif probability <= 0.2:   # 10-20%
-        return 'Uncommon'
+        return 'Uncommon', RARITY_MULTIPLIERS['Uncommon']
     elif probability <= 0.4:   # 20-40%
-        return 'Common'
+        return 'Common', RARITY_MULTIPLIERS['Common']
     else:                      # >40%
-        return 'Basic'
-
+        return 'Basic', RARITY_MULTIPLIERS['Basic']
+    
 # Configure the scheduler
 executors = {
     'default': ThreadPoolExecutor(max_workers=10),
@@ -2731,8 +2745,8 @@ def api_all_parcels():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
-        # Retrieve map size from the database
+
+        # Récupérer la taille de la carte depuis la base de données
         cursor.execute("SELECT value FROM game_parameters WHERE key = 'map_size'")
         map_size_result = cursor.fetchone()
         if map_size_result:
@@ -2740,8 +2754,8 @@ def api_all_parcels():
         else:
             log_message("Map size not found in game_parameters")
             map_size = MAP_SIZE  # Use the default value defined globally
-        
-        # Get the current count for each building type
+
+        # Obtenir le nombre actuel pour chaque type de bâtiment
         cursor.execute("""
             SELECT building_type, COUNT(*) as count
             FROM parcels
@@ -2750,23 +2764,32 @@ def api_all_parcels():
         """)
         building_counts = {row['building_type']: row['count'] for row in cursor.fetchall()}
 
-        # Get max_count for each building type
+        # Obtenir max_count pour chaque type de bâtiment
         cursor.execute("SELECT name, max_count FROM building_types")
         max_counts = {row['name']: row['max_count'] for row in cursor.fetchall()}
-        
-        # Updated query to include all new columns
+
+        # Récupérer toutes les parcelles avec les probabilités
         cursor.execute("""
-            SELECT id, owner_address, building_type, building_variant, purchase_amount, x, y,
-                purchase_date, last_fee_payment, last_fee_check, last_fee_amount, fee_frequency,
-                next_fee_date, energy_production, energy_consumption, zkaspa_production, zkaspa_balance,
-                is_for_sale, sale_price, type, rarity
-            FROM parcels
+            SELECT p.id, p.owner_address, p.building_type, p.building_variant, p.purchase_amount, p.x, p.y,
+                p.purchase_date, p.last_fee_payment, p.last_fee_check, p.last_fee_amount, p.fee_frequency,
+                p.next_fee_date, p.energy_production, p.energy_consumption, p.zkaspa_production, p.zkaspa_balance,
+                p.is_for_sale, p.sale_price, p.type, bv.probability
+            FROM parcels p
+            LEFT JOIN building_variants bv
+                ON p.building_type = bv.building_type AND p.building_variant = bv.variant
         """)
         parcels = cursor.fetchall()
-        
+
         result = {
             "map_size": map_size,
-            "parcels": [{
+            "parcels": []
+        }
+
+        for parcel in parcels:
+            probability = parcel['probability'] or 1.0  # Valeur par défaut si la probabilité n'est pas trouvée
+            rarity, _ = determine_rarity_and_multiplier(probability)
+
+            result['parcels'].append({
                 "id": parcel['id'],
                 "owner_address": parcel['owner_address'],
                 "building_type": parcel['building_type'],
@@ -2787,18 +2810,11 @@ def api_all_parcels():
                 "is_for_sale": parcel['is_for_sale'],
                 "sale_price": parcel['sale_price'],
                 "type": parcel['type'],
-                "rarity": determine_rarity(next(
-                    (v[1] for v in next(
-                        (b['variants'] for b in BUILDING_TYPES if b['name'] == parcel['building_type']), 
-                        []
-                    ) if v[0] == parcel['building_variant']), 
-                    1.0
-                )) if parcel['building_type'] and parcel['building_variant'] else 'Unknown',
+                "rarity": rarity,
                 "current_count": building_counts.get(parcel['building_type'], 0),
                 "max_count": max_counts.get(parcel['building_type'])
-            } for parcel in parcels]
-        }
-        
+            })
+
         return jsonify(result)
 
     except sqlite3.Error as e:

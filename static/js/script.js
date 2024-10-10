@@ -34,6 +34,16 @@ const tileHeight = 50;
 /*Game's wallet*/ 
 const KASPA_MAIN_ADDRESS = "kaspa:qry6aqhswjctzzg4td0z9lgky0lqhtme2yfxv3feevavmxajm5hl640jhaukp";
 
+const RARITY_MULTIPLIERS = {
+    'Mythic': 2.5,
+    'Legendary': 2.0,
+    'Epic': 1.8,
+    'Rare': 1.6,
+    'Uncommon': 1.4,
+    'Common': 1.2,
+    'Basic': 1.0
+};
+
 const tileCache = {};
 let scale = 1;
 let totalParcels;
@@ -52,6 +62,8 @@ let gridGenerated = false;
 let initialPinchDistance = 0;
 let currentKaswareAccount = null;
 let currentUserInfo = null;
+// to Prevent Multiple Calls
+let isUpdatingMap = false;
 
 // New structure to store data locally
 let localData = {
@@ -157,6 +169,18 @@ async function updateLocalData() {
     updateGrid(); // to update the display
 
 }
+
+// A Throttled Update Function
+function requestMapUpdate() {
+    if (!isUpdatingMap) {
+        isUpdatingMap = true;
+        requestAnimationFrame(() => {
+            updateMapPosition();
+            isUpdatingMap = false;
+        });
+    }
+}
+
 
 /**
  * Checks if a parcel is in its grace period for fee payment.
@@ -265,11 +289,15 @@ function createTile(parcel) {
         if (building_type && building_variant) {
             tileImage.src = `/static/images/${building_type.toLowerCase()}_${building_variant.toLowerCase()}.webp`;
             
-            // Add the rarity indicator
-            const rarityIndicator = document.createElement('div');
-            rarityIndicator.className = `rarity-indicator ${parcel.rarity.toLowerCase()}`;
-            rarityIndicator.textContent = parcel.rarity[0].toUpperCase(); // First letter of the rarity
-            tile.appendChild(rarityIndicator);
+            if (parcel.rarity) {
+                // Ajouter l'indicateur de rareté
+                const rarityIndicator = document.createElement('div');
+                rarityIndicator.className = `rarity-indicator ${parcel.rarity.toLowerCase()}`;
+                rarityIndicator.textContent = parcel.rarity[0].toUpperCase(); // Première lettre de la rareté
+                tile.appendChild(rarityIndicator);
+            } else {
+                console.warn(`Rareté non définie pour la parcelle ${parcel.id}`);
+            }
         } else {
             console.warn(`Parcelle ${id} possédée mais sans type ou variante de bâtiment définis`);
             tileImage.src = '/static/images/parcelle.webp';
@@ -296,8 +324,7 @@ function createTile(parcel) {
 
     const tileSpacingX = 55;
     const tileSpacingY = 27.5;
-    tile.style.left = `${(x - y) * tileSpacingX}px`;
-    tile.style.top = `${(x + y) * tileSpacingY}px`;
+    tile.style.transform = `translate(${(x - y) * tileSpacingX}px, ${(x + y) * tileSpacingY}px)`;
     tile.dataset.x = x;
     tile.dataset.y = y;
     
@@ -345,50 +372,59 @@ function createTile(parcel) {
  */
 function updateTile(tile, parcel) {
     const { building_type, building_variant, owner_address, is_for_sale, rarity } = parcel;
-    
+
     tile.className = `tile ${building_type ? building_type.toLowerCase() : 'parcel'}`;
-    
+
     let tileImage = tile.querySelector('.tile-image');
     if (!tileImage) {
         tileImage = document.createElement('img');
         tileImage.className = 'tile-image';
         tile.appendChild(tileImage);
     }
-    
+
     if (owner_address) {
         if (building_type && building_variant) {
             tileImage.src = `/static/images/${building_type.toLowerCase()}_${building_variant.toLowerCase()}.webp`;
-            
-            // Update or add the rarity indicator
-            let rarityIndicator = tile.querySelector('.rarity-indicator');
-            if (!rarityIndicator) {
-                rarityIndicator = document.createElement('div');
-                rarityIndicator.className = 'rarity-indicator';
-                tile.appendChild(rarityIndicator);
+
+            if (rarity) {
+                // Mettre à jour ou ajouter l'indicateur de rareté
+                let rarityIndicator = tile.querySelector('.rarity-indicator');
+                if (!rarityIndicator) {
+                    rarityIndicator = document.createElement('div');
+                    rarityIndicator.className = 'rarity-indicator';
+                    tile.appendChild(rarityIndicator);
+                }
+                rarityIndicator.className = `rarity-indicator ${rarity.toLowerCase()}`;
+                rarityIndicator.textContent = rarity[0].toUpperCase();
+            } else {
+                // Supprimer l'indicateur de rareté s'il existe
+                const rarityIndicator = tile.querySelector('.rarity-indicator');
+                if (rarityIndicator) {
+                    rarityIndicator.remove();
+                }
+                console.warn(`Rareté non définie pour la parcelle ${parcel.id}`);
             }
-            rarityIndicator.className = `rarity-indicator ${rarity.toLowerCase()}`;
-            rarityIndicator.textContent = rarity[0].toUpperCase();
         } else {
-            console.warn(`Parcelle possédée mais sans type ou variante de bâtiment définis`);
+            console.warn(`Parcelle ${parcel.id} possédée mais sans type ou variante de bâtiment définis`);
             tileImage.src = '/static/images/parcelle.webp';
         }
     } else {
         tileImage.src = '/static/images/parcelle.webp';
-        // Remove the rarity indicator if the parcel is not owned
+        // Supprimer l'indicateur de rareté si la parcelle n'est pas possédée
         const rarityIndicator = tile.querySelector('.rarity-indicator');
         if (rarityIndicator) {
             rarityIndicator.remove();
         }
     }
 
-    // KasWare implementation
+    // Implémentation de KasWare
     if (parcel.owner_address && parcel.owner_address === currentKaswareAccount) {
         tile.classList.add('user-owned');
     } else {
         tile.classList.remove('user-owned');
     }
 
-    // Handle the sale indicator
+    // Gestion de l'indicateur de vente
     if (is_for_sale) {
         tile.classList.add('for-sale');
         let saleIndicator = tile.querySelector('.sale-indicator');
@@ -414,7 +450,7 @@ function updateTile(tile, parcel) {
 function addTreesBorder(mapSize) {
     const isMobileDevice = typeof isMobile === 'function' && isMobile();
     const borderWidth = isMobileDevice ? 20 : 20; // Reduce the border width on mobile
-    const treeDensity = isMobileDevice ? 0.005 : 0.07; // Reduce the density on mobile
+    const treeDensity = isMobileDevice ? 0.000 : 0.07; // Reduce the density on mobile
     const extraMargin = 1; // Marge supplémentaire pour éviter la superposition avec la carte
 
     for (let i = -borderWidth; i < mapSize + borderWidth; i++) {
@@ -436,8 +472,7 @@ function addTreesBorder(mapSize) {
 
                 const tileSpacingX = 55;
                 const tileSpacingY = 27.5;
-                tree.style.left = `${(i - j) * tileSpacingX}px`;
-                tree.style.top = `${(i + j) * tileSpacingY}px`;
+                tree.style.transform = `translate(${(i - j) * tileSpacingX}px, ${(i + j) * tileSpacingY}px)`;
 
                 // Add a slight size variation for a more natural look
                 const scale = isMobileDevice ? 0.6 + Math.random() * 0.3 : 0.8 + Math.random() * 0.4; // Reduce the size on mobile
@@ -461,12 +496,33 @@ async function showParcelInfo(x, y) {
 
     if (parcel) {
         let infoMessage = '';
-
+    
         if (parcel.owner_address) {
             const isInGracePeriod = checkGracePeriod(parcel.next_fee_date);
             const gracePeriodClass = isInGracePeriod ? 'grace-period' : '';
             const warningIcon = isInGracePeriod ? '⚠️ ' : '';
-        
+    
+            // Retrieve event multipliers from localData
+            const energyMultiplier = localData.energyStats.energy_multiplier || 1.0;
+            const zkaspaMultiplier = localData.energyStats.zkaspa_multiplier || 1.0;
+    
+            // Get rarity multiplier
+            const rarityMultiplier = RARITY_MULTIPLIERS[parcel.rarity] || 1;
+    
+            // Calculate adjusted energy production per parcel
+            const adjustedEnergyProduction = (parcel.energy_production || 0) * energyMultiplier;
+    
+            // Calculate adjusted zkaspa production per parcel
+            let adjustedZkaspaProduction = (parcel.zkaspa_production || 0) * energyMultiplier * zkaspaMultiplier * rarityMultiplier;
+    
+            // Check for global energy deficit
+            const isEnergyDeficit = localData.energyStats.total_energy_production < localData.energyStats.total_energy_consumption;
+    
+            // If there's a deficit, set zkaspa production to zero
+            if (isEnergyDeficit) {
+                adjustedZkaspaProduction = 0;
+            }
+    
             infoMessage = `
                 🆔 ID: ${parcel.id}<br>
                 👤 Owner: ${parcel.owner_address}<br>
@@ -484,9 +540,9 @@ async function showParcelInfo(x, y) {
                     ${warningIcon}📅 Next fee date: ${formatTimestamp(parcel.next_fee_date)}<br>
                     ${warningIcon}⏳ Time until next fee: ${calculateTimeUntilFee(parcel.next_fee_date)}<br>
                 </span>
-                ⚡ Energy production: ${parcel.energy_production || 0}/day<br>
+                ⚡ Energy production: ${adjustedEnergyProduction.toFixed(2)}/day<br>
                 🔋 Energy consumption: ${parcel.energy_consumption || 0}/day<br>
-                💎 zkaspa production: ${parcel.zkaspa_production || 0}/day<br>
+                💎 zkaspa production: ${adjustedZkaspaProduction.toFixed(2)}/day<br>
                 💰 zkaspa balance: ${parcel.zkaspa_balance || 0}<br>
                 📅 Last fee payment: ${formatTimestamp(parcel.last_fee_payment)}<br>
                 📅 Last fee check: ${formatTimestamp(parcel.last_fee_check)}<br>
@@ -602,8 +658,13 @@ async function generateGrid() {
         lakeBackground.className = 'lake-background';
         lakeBackground.style.width = `${(LAKE_END_X - LAKE_START_X) * tileWidth}px`;
         lakeBackground.style.height = `${(LAKE_END_Y - LAKE_START_Y) * tileHeight}px`;
-        lakeBackground.style.left = `${LAKE_START_X * tileWidth}px`;
-        lakeBackground.style.top = `${LAKE_START_Y * tileHeight}px`;
+
+        // Définir les rotations existantes
+        const rotationTransform = 'rotateX(60deg) rotateZ(45deg)';
+
+        // Appliquer la transformation combinée
+        lakeBackground.style.transform = `translate(${LAKE_START_X * tileWidth}px, ${LAKE_START_Y * tileHeight}px) ${rotationTransform}`;
+
         tilesContainer.appendChild(lakeBackground);
 
         // Filter valid parcels and ignore those without ID or out of bounds
@@ -624,6 +685,9 @@ async function generateGrid() {
 
         // Create a set to track used tile keys
         const usedTileKeys = new Set();
+
+        // When generating or updating multiple tiles, instead of adding them directly to the DOM, add them to a DocumentFragment.
+        const fragment = document.createDocumentFragment();
 
         validParcels.forEach(parcel => {
             const tile = createTile(parcel);
@@ -766,7 +830,9 @@ async function checkKasLandStatus() {
         
         if (status.is_full) {
             statusElement.textContent = status.message;
-            statusElement.style.display = 'block';
+            //statusElement.style.display = 'block';
+            // A supprimer si agrandissement de la map
+            statusElement.style.display = 'none';
 
             // Afficher également l'élément kaslandfulltext
             if (kaslandFullTextElement) {
@@ -940,7 +1006,7 @@ function handleTouchMove(event) {
         lastMouseX = touchX;
         lastMouseY = touchY;
 
-        requestAnimationFrame(updateMapPosition);
+        requestMapUpdate();
     }
 }
 
@@ -1061,7 +1127,7 @@ container.addEventListener('mousemove', (e) => {
         offsetY += deltaY;
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
-        updateMapPosition();
+        requestMapUpdate();
     }
 });
 
@@ -1372,19 +1438,26 @@ document.addEventListener('DOMContentLoaded', function() {
         <p>KasLand is not responsible for any losses incurred due to the use of incompatible wallets. Always ensure you're using a wallet with a consistent address before engaging in any transactions.</p>
     </div>
     <h3>Buying a New Parcel</h3>
-    <p>To buy a new parcel and add a building in KasLand, simply send KAS to the following address (the minimum acquisition amount is 5 KAS.) :</p>
-    
     <p id="kaslandfulltext" style="color: red; font-weight: bold; display: none;">
-        If you don't have a plot yet, please read this carefully:<br>
-        The plots are complete for the beta, so do NOT send any more money to the game's wallet! (except if you want to upgrade, sell or cancel the sell of your plot) <br>
-        If you want to buy a plot from a player, send exactly the sale price to the player's wallet (only if his plot is on sale), NOT to the game's address!
+    ⚠️ KasLand is full, so if you don't have a plot yet, please read this carefully !!!<br>
+    The plots are sold out for now, so do NOT send any more money to the game's wallet! (except if you want to upgrade, sell, or cancel the sale of your plot) and wait for a plot to become available.<br>
+    If you want to buy a plot from a player, send exactly the sale price to the player's wallet (only if his plot is for sale), NOT to the game's address!
     </p>
+    <p>To buy a new parcel and add a building in KasLand, simply send KAS to the following address (the minimum acquisition amount is 5 KAS.) :</p>
 
     <div class="address-container">
         <input type="text" id="kaspa-address" value="${KASPA_MAIN_ADDRESS}" readonly>
         <button id="copy-address">Copy</button>
     </div>
     <p>The amount you send determines the type of building you'll get. Check the Legend for tier information.</p>
+
+    <h3>Upgrading Your Building</h3>
+    <p>To upgrade your building to a higher tier, send the difference between your current investment value and the desired tier's value to the KasLand address. For example:</p>
+    <ul>
+        <li>If you have a 5 KAS building and want to upgrade to a 10 KAS building, send 5 KAS.</li>
+        <li>If you have a 10 KAS building and want to upgrade to a 20 KAS building, send 10 KAS.</li>
+    </ul>
+    <p>The upgrade will be processed automatically after one minute, and your building will be updated to the new tier.</p>
 
     <h3>Selling Your Parcel</h3>
     <p>To put your parcel up for sale or adjust its price, send one of the following amounts to the KasLand address above:</p>
@@ -1415,7 +1488,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <ol>
         <li>Find a parcel marked "FOR SALE" on the map.</li>
         <li>Click on it to see the sale price.</li>
-        <li><strong>Send the exact sale price amount to the wallet address of the parcel's current owner.</strong></li>
+        <li><strong>⚠️ Send the exact sale price amount to the wallet address of the parcel's current owner AND refresh the page before sending the amount to ensure the parcel is still for sale.</strong></li>
         <li>The parcel ownership will be transferred to you automatically.</li>
     </ol>
     <p><strong>Important Notes:</strong></p>

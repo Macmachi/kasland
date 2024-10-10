@@ -71,6 +71,14 @@ body, html {
     transform: rotateX(60deg) rotateZ(45deg);
 }
 
+/* informer le navigateur que ces éléments seront transformés */
+.tile, .tree {
+    position: absolute;
+    will-change: transform;
+    top: 0;
+    left: 0;
+}
+
 /* Style individuel des tuiles */
 .tile {
     position: absolute;
@@ -116,14 +124,27 @@ body, html {
     position: absolute;
     width: 68px;
     height: 68px;
-    top: 4px;  /* Déplace l'élément vers le haut */
-    left: 15px;  /* Déplace l'élément vers la droite */
+    top: 0px;  /* Déplace l'élément vers le haut */
+    left: 10px;  /* Déplace l'élément vers la droite */
     right: 0;
     bottom: 0;
-    border: 2px solid darkgreen;
+    border: 5px solid #FCD53F;
     transform: rotateX(60deg) rotateZ(45deg);
     pointer-events: none;
     z-index: 1;
+}
+
+/* Ajouter une icône sur la parcelle du joueur */
+.tile.user-owned::after {
+    content: '⭐'; 
+    position: absolute;
+    top: -5px;
+    left: 45px;
+    font-size: 12px;
+    color: gold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 2;
 }
 
 /* Style des arbres décoratifs */
@@ -580,23 +601,29 @@ body, html {
 /* Indicateur d'événement en cours */
 #current-event-indicator {
     position: fixed;
-    top: calc(60px + 10px); /* 60px pour la hauteur de la barre KasWare + 10px de marge */
+    top: 60px; /* Juste en dessous de la barre KasWare */
     left: 50%;
     transform: translateX(-50%);
     background-color: rgba(255, 165, 0, 0.8);
     color: white;
-    padding: 10px 20px;
-    border-radius: 20px;
+    padding: 5px 15px;
+    border-radius: 10px 10px 10px 10px; /* Arrondi uniquement en bas */
     font-weight: bold;
     z-index: 1001;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
+    max-width: 80%;
+    box-sizing: border-box;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Icône dans l'indicateur d'événement */
 #current-event-indicator i {
-    font-size: 20px;
+    font-size: 16px;
 }
 
 /* Styles pour les changements d'énergie et de production */
@@ -774,9 +801,12 @@ body, html {
 /*Esthétique du lac sur la map*/
 .lake-background {
     position: absolute;
+    top: 0;
+    left: 0;
+    /* Supprimé : transform: rotateX(60deg) rotateZ(45deg); */
     background: radial-gradient(circle at center, #2a70c2 0%, #4a90e2 50%, #63a4ff 100%);
     opacity: 0.9;
-    transform: rotateX(60deg) rotateZ(45deg);
+    /* Les autres styles restent inchangés */
     transform-origin: top left;
     z-index: -1;
     pointer-events: none;
@@ -973,11 +1003,17 @@ body, html {
 
     /* Style de l'indicateur d'événement en cours pour les écrans mobiles */
     #current-event-indicator {
-        top: auto;
-        bottom: 20px;
-        font-size: 14px;
-        padding: 8px 16px;
+        top: auto; /* Annule la position top */
+        bottom: 10px; /* Place l'indicateur en bas de l'écran */
+        max-width: 90%;
+        font-size: 12px;
+        padding: 3px 10px;
+        border-radius: 10px 10px 10px 10px; /* Arrondit les coins supérieurs */
     }
+    #current-event-indicator i {
+        font-size: 14px;
+    }
+
     /*bouton pour les infos qu'on ferme si pas besoin (ouvert par défaut) */
     #toggle-info {
         width: 45px;
@@ -1008,13 +1044,8 @@ body, html {
         padding: 15px;
     }
 
-    #current-event-indicator {
-        top: calc(40px + 5px); /* Ajustez si la barre KasWare est plus petite sur mobile */
-        padding: 8px 15px;
-        font-size: 14px;
-    }
-
-    #current-event-indicator i {
-        font-size: 16px;
+    /* On cache les arbres sur mobile */
+    .tree {
+        display: none;
     }
 }
