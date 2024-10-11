@@ -1,6 +1,6 @@
 '''
 KasLand Application
-Version: v0.9.3.0
+Version: v0.9.3.1
 
 Copyright (c) 2024 Rymentz (rymentz.studio@gmail.com)
 
@@ -2659,7 +2659,7 @@ Returns:
 def determine_rarity_and_multiplier(probability):
     if probability <= 0.001:  # ≤0.1%
         return 'Mythic', RARITY_MULTIPLIERS['Mythic']
-    elif probability <= 0.01:  # 0.1-1%
+    elif probability <= 0.015:  # 0.1-1.5%
         return 'Legendary', RARITY_MULTIPLIERS['Legendary']
     elif probability <= 0.05:  # 1-5%
         return 'Epic', RARITY_MULTIPLIERS['Epic']
