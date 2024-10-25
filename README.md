@@ -1,19 +1,68 @@
 # KasLand (BETA)
 
 KasLand is an innovative BlockDAG-based management game on the Kaspa network. Players acquire and manage a single virtual plot, construct and upgrade buildings, and earn zkaspa (in-game currency), allowing them to recoup part of their investment.
+Joins us on https://kasland.org/ 
 
 ## Core Mechanics 🎮
 
 ### Land and Buildings 🏞️🏘️
-- 23x23 grid of parcels, one parcel per player
-- Building types: Small House, Wind Turbine ⚡ (more coming soon)
-- Building variants (A-H) with different rarity levels
-- Building characteristics: KAS cost, fees, energy and zkaspa production/consumption
+Residential Buildings:
+- Small House (5 KAS)
+  - Energy consumption: -5⚡
+  - Base zkaspa production: +0.1/day
+  - Maintenance: 0.5 KAS/90 days
 
-### Economy 💰
-- Use real KAS to purchase a parcel and upgrade buildings
-- Earn virtual zkaspa
-- Pay periodic fees in KAS
+- Medium House (20 KAS)
+  - Energy consumption: -20⚡
+  - Base zkaspa production: +0.4/day
+  - Maintenance: 2 KAS/90 days
+
+- Large House (40 KAS)
+  - Energy consumption: -40⚡
+  - Base zkaspa production: +0.8/day
+  - Maintenance: 2 KAS/90 days
+
+- Manor (60 KAS)
+  - Energy consumption: -60⚡
+  - Base zkaspa production: +1.0/day
+  - Maintenance: 2 KAS/90 days
+
+Energy Producers:
+- Wind Turbine Level 1 (10 KAS)
+  - Base energy production: +30⚡
+  - Energy production varies by rarity:
+    - Mythic: +75⚡ (x2.5)
+    - Legendary: +60⚡ (x2.0)
+    - Epic: +54⚡ (x1.8)
+    - Rare: +48⚡ (x1.6)
+    - Uncommon: +42⚡ (x1.4)
+    - Common: +36⚡ (x1.2)
+    - Basic: +30⚡ (x1.0)
+  - Receives 25% of other buildings' zkaspa production
+  - Maintenance: 1 KAS/90 days
+
+### Economy System 💰
+- Use real KAS to purchase plots and buildings
+- Maintenance fees every 90 days
+- 15% of investments go to community fund
+- 15% redistributed to players based on zkaspa holdings
+- Energy producers receive 25% of zkaspa production
+- 25% of zkaspa production is burned to counter inflation
+
+### Plot Trading System 🤝
+List your plot by sending:
+- 0.2 KAS: List at 100% of investment
+- 4.1 KAS: List at 150%
+- 4.2 KAS: List at 200%
+- 4.3 KAS: List at 250%
+- 4.4 KAS: List at 300%
+- 4.5 KAS: List at 350%
+- 4.6 KAS: List at 400%
+- 4.7 KAS: List at 450%
+- 4.8 KAS: List at 500%
+- 4.9 KAS: List at 550%
+- Cancel listing: Send 0.3 KAS
+- 50% zkaspa reduction when purchasing from another player
 
 ### Random Events 🎭
 - 24-hour events affecting energy or zkaspa production
@@ -28,12 +77,18 @@ KasLand is an innovative BlockDAG-based management game on the Kaspa network. Pl
 ⚠️ WARNING: Use only wallets with constant addresses (e.g., KasWare Wallet). Losses from incompatible wallets won't be refunded.
 
 ### Zkaspa Production and Fees 💎💸
-- Daily zkaspa production based on building type and global energy balance
+- Daily zkaspa production based on building type, rarity  and global energy balance
 - Periodic fees for buildings
-- Risk of parcel loss if fees aren't paid (grace period provided)
+- Risk of parcel loss if fees aren't paid (7 days grace period provided)
 
-### Rarity System 🌈
-Variant levels: Mythic (≤0.1%), Legendary (0.1-1%), Epic (1-5%), Rare (5-10%), Uncommon (10-20%), Common (20-40%), Basic (>40%)
+### Building Variants and Rarity 🌈
+- Mythic (≤0.1%) - x2.5 multiplier
+- Legendary (0.1-1.5%) - x2.0 multiplier
+- Epic (1-5%) - x1.8 multiplier
+- Rare (5-10%) - x1.6 multiplier
+- Uncommon (10-20%) - x1.4 multiplier
+- Common (20-40%) - x1.2 multiplier
+- Basic (>40%) - x1.0 multiplier
 
 ## Game Balance ⚖️
 
@@ -45,26 +100,19 @@ Variant levels: Mythic (≤0.1%), Legendary (0.1-1%), Epic (1-5%), Rare (5-10%),
 - Positive community energy balance required for zkaspa production
 - Strategic management of energy production and consumption
 
-### Building Limitations 🚫
-- Restrictions on certain building types to maintain game balance
-
 ## Community and Transparency 🌐
 
 ### Open Source Development 💻
-- Game code is open source, allowing community participation in development
+- Game code is open source, allowing community to review the code
 - Community members can contribute to the game's growth and improvement
 
 ### Multisig Wallet 🔐
 - Game wallet is multi-signature, with an ambassador as co-signer
 - Enhances security and community oversight of funds
 
-### Regular Database Updates 📊
-- Game database regularly uploaded for full transparency
-- Community can verify fund management and game statistics
-
 ### Community-Driven Decisions 🗳️
 - Aiming to establish a strong community decision-making process
-- Players have a voice in the game's future development and direction
+- Players have a voice in the game's future development and direction joins us on Discord!
 
 Experience the fusion of BlockDAG technology and strategic management in KasLand. Optimize your single plot, contribute to community energy production, and earn zkaspa in this exciting, transparent, and community-driven blockchain-based game!
 
@@ -84,7 +132,3 @@ Under the following terms:
 - NonCommercial: You may not use the code for commercial purposes.
 
 For more details on the code license, please refer to the [Creative Commons CC BY-NC 4.0 license](https://creativecommons.org/licenses/by-nc/4.0/).
-
-# Documentation
-
-Coming soon...
