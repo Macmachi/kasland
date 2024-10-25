@@ -8,23 +8,55 @@ Joins us on https://kasland.org/
 ### Land and Buildings 🏞️🏘️
 Residential Buildings:
 - Small House (5 KAS)
-  - Energy consumption: -5⚡
+  - Base energy consumption: -5⚡
   - Base zkaspa production: +0.1/day
+  - Production varies by rarity:
+    - Mythic: +0.25 zkaspa/day (x2.5)
+    - Legendary: +0.2 zkaspa/day (x2.0)
+    - Epic: +0.18 zkaspa/day (x1.8)
+    - Rare: +0.16 zkaspa/day (x1.6)
+    - Uncommon: +0.14 zkaspa/day (x1.4)
+    - Common: +0.12 zkaspa/day (x1.2)
+    - Basic: +0.1 zkaspa/day (x1.0)
   - Maintenance: 0.5 KAS/90 days
 
 - Medium House (20 KAS)
-  - Energy consumption: -20⚡
+  - Base energy consumption: -20⚡
   - Base zkaspa production: +0.4/day
+  - Production varies by rarity:
+    - Mythic: +1.0 zkaspa/day (x2.5)
+    - Legendary: +0.8 zkaspa/day (x2.0)
+    - Epic: +0.72 zkaspa/day (x1.8)
+    - Rare: +0.64 zkaspa/day (x1.6)
+    - Uncommon: +0.56 zkaspa/day (x1.4)
+    - Common: +0.48 zkaspa/day (x1.2)
+    - Basic: +0.4 zkaspa/day (x1.0)
   - Maintenance: 2 KAS/90 days
 
 - Large House (40 KAS)
-  - Energy consumption: -40⚡
+  - Base energy consumption: -40⚡
   - Base zkaspa production: +0.8/day
+  - Production varies by rarity:
+    - Mythic: +2.0 zkaspa/day (x2.5)
+    - Legendary: +1.6 zkaspa/day (x2.0)
+    - Epic: +1.44 zkaspa/day (x1.8)
+    - Rare: +1.28 zkaspa/day (x1.6)
+    - Uncommon: +1.12 zkaspa/day (x1.4)
+    - Common: +0.96 zkaspa/day (x1.2)
+    - Basic: +0.8 zkaspa/day (x1.0)
   - Maintenance: 2 KAS/90 days
 
 - Manor (60 KAS)
-  - Energy consumption: -60⚡
+  - Base energy consumption: -60⚡
   - Base zkaspa production: +1.0/day
+  - Production varies by rarity:
+    - Mythic: +2.5 zkaspa/day (x2.5)
+    - Legendary: +2.0 zkaspa/day (x2.0)
+    - Epic: +1.8 zkaspa/day (x1.8)
+    - Rare: +1.6 zkaspa/day (x1.6)
+    - Uncommon: +1.4 zkaspa/day (x1.4)
+    - Common: +1.2 zkaspa/day (x1.2)
+    - Basic: +1.0 zkaspa/day (x1.0)
   - Maintenance: 2 KAS/90 days
 
 Energy Producers:
